@@ -1,0 +1,293 @@
+{
+  "case_id": "00b14135-8fa0-4525-a88d-21605f615136",
+  "identity": {
+    "lead_id": "00b14135-8fa0-4525-a88d-21605f615136",
+    "first_name": "Jahnavi",
+    "last_name": "Shah",
+    "email": "jahnavi812@gmail.com",
+    "phone": "+16076975272",
+    "immigration_category": "O1_VISA",
+    "current_status": "F1_OPT_STEM",
+    "status_expiration_date": "2027-02-11",
+    "country_of_birth": "India",
+    "country_of_citizenship": "India",
+    "married": "no",
+    "linkedin_url": "https://www.linkedin.com/in/jahnshah/",
+    "google_scholar_url": "",
+    "us_job_offer": "yes",
+    "company_name": "Clay Labs",
+    "position": "Product Support Specialist",
+    "salary": "",
+    "sponsor_willingness": "yes",
+    "self_employment_planned": "yes",
+    "explore_agent_option": "yes"
+  },
+  "field_of_endeavor": "AI & Tech Content Creation, Product Management",
+  "summary": "Jahnavi Shah is an AI and tech content creator with experience in product management. She has been featured by Business Insider, Cornell Daily Sun, and Study International UK. Jahnavi holds a Master of Engineering in Engineering Management from Cornell University.",
+  "employment": [
+    {
+      "organization": "Clay Labs",
+      "title": "Product Support Specialist",
+      "location": "San Francisco, USA",
+      "start_date": "Aug’ 20 - Present",
+      "end_date": "",
+      "responsibilities": [
+        "Create high-performing short-form educational content across Instagram and LinkedIn.",
+        "Self-produce end-to-end video content from scripting, filming, editing, and visual design."
+      ],
+      "source": "resume"
+    },
+    {
+      "organization": "Persona",
+      "title": "Product Deployment Strategist",
+      "location": "San Francisco, USA",
+      "start_date": "Oct’ 24 - Present",
+      "end_date": "",
+      "responsibilities": [
+        "Owned post-deployment strategy for 40+ enterprise and SMB customers.",
+        "Designed and delivered onboarding and training programs."
+      ],
+      "source": "resume"
+    },
+    {
+      "organization": "Wonsulting",
+      "title": "AI Product Manager",
+      "location": "Remote, USA",
+      "start_date": "Feb’ 24 - Oct’ 24",
+      "end_date": "",
+      "responsibilities": [
+        "Launched an AI-powered Job Tracker with 4,000+ MAUs.",
+        "Collaborated with engineering, design, analytics and marketing teams."
+      ],
+      "source": "resume"
+    },
+    {
+      "organization": "The Washington Post",
+      "title": "Product Manager Intern",
+      "location": "Boston, MA",
+      "start_date": "May’ 23 - Aug’ 23",
+      "end_date": "",
+      "responsibilities": [
+        "Conducted market and competitor analyses.",
+        "Facilitated over 20 stakeholder interviews."
+      ],
+      "source": "resume"
+    },
+    {
+      "organization": "LinkedIn",
+      "title": "Student Consultant (APM)",
+      "location": "Ithaca, NY",
+      "start_date": "Jan’ 23 - May’ 23",
+      "end_date": "",
+      "responsibilities": [
+        "Analysed Gen-Z behaviour and proposed strategies to increase LinkedIn Premium’s subscription revenue.",
+        "Utilized advanced analytical techniques."
+      ],
+      "source": "resume"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Cornell University",
+      "degree": "Master of Engineering in Engineering Management",
+      "field": "",
+      "dates": "Present",
+      "source": "resume"
+    },
+    {
+      "institution": "Pandit Deendayal Energy University",
+      "degree": "Bachelor of Science in Computer Science",
+      "field": "",
+      "dates": "Present",
+      "source": "resume"
+    }
+  ],
+  "criteria": [
+    {
+      "key": "awards",
+      "applicant_answer": "yes",
+      "claim_summary": "Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [
+        "No supporting documents or URLs provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "memberships",
+      "applicant_answer": "yes",
+      "claim_summary": "LinkedIn Creator Accelerator Program and LinkedIn Top Voice",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [
+        "No supporting documents or URLs provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "media",
+      "applicant_answer": "yes",
+      "claim_summary": "- **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S.",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [
+        "No supporting documents or URLs provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "peer_review",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "judging",
+      "applicant_answer": "yes",
+      "claim_summary": "Startup Hackathon in SF",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [
+        "No supporting documents or URLs provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "patents",
+      "applicant_answer": "yes",
+      "claim_summary": "Design Patent in India but never launched so no impact to show",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [
+        "No supporting documents or URLs provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "publications",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "critical_role",
+      "applicant_answer": "yes",
+      "claim_summary": "Owned post-deployment strategy for 40+ enterprise and SMB customers, managing full customer lifecycle from onboarding through expansion.",
+      "evidence_status": "supported",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "high_salary",
+      "applicant_answer": "yes",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [
+        "No salary information provided."
+      ],
+      "notes": ""
+    },
+    {
+      "key": "conferences",
+      "applicant_answer": "yes",
+      "claim_summary": "Spoken and hosted multiple workshops",
+      "evidence_status": "supported",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "google_scholar",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    }
+  ],
+  "claims": [
+    "I have been featured by Business Insider, Cornell Daily Sun, and Study International UK.",
+    "I am a member of the LinkedIn Creator Accelerator Program and LinkedIn Top Voice.",
+    "I hold a Master of Engineering in Engineering Management from Cornell University.",
+    "I played a critical role at Clay Labs, managing post-deployment strategy for 40+ enterprise and SMB customers."
+  ],
+  "evidence_index": [
+    {
+      "source": "resume",
+      "reference": "5e186d76-4a84-4b74-927d-ea9f11f5a1b2-Resume_JahnaviShah.docx.pdf",
+      "excerpt": "Product Support Specialist at Clay Labs, Product Deployment Strategist at Persona, AI Product Manager at Wonsulting, and Student Consultant (APM) at LinkedIn."
+    },
+    {
+      "source": "questionnaire",
+      "reference": "sectionB.media.details",
+      "excerpt": "- **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S."
+    },
+    {
+      "source": "questionnaire",
+      "reference": "sectionB.awards.details",
+      "excerpt": "Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)"
+    },
+    {
+      "source": "questionnaire",
+      "reference": "sectionB.memberships.details",
+      "excerpt": "LinkedIn Creator Accelerator Program and LinkedIn Top Voice"
+    }
+  ],
+  "missing_information": [
+    {
+      "priority": "medium",
+      "topic": "Awards",
+      "question": "Provide supporting documents or URLs for the awards mentioned.",
+      "reason": "No evidence provided to support claims."
+    },
+    {
+      "priority": "medium",
+      "topic": "Publications",
+      "question": "Provide any publications related to your work in AI and tech content creation.",
+      "reason": "No supporting documents or URLs provided."
+    },
+    {
+      "priority": "high",
+      "topic": "Salary Information",
+      "question": "Please provide salary information for the positions mentioned.",
+      "reason": "Required for high_salary criterion support."
+    }
+  ],
+  "conflicts": [
+    {
+      "field": "Country of Citizenship",
+      "sources": [
+        "resume",
+        "questionnaire"
+      ],
+      "details": "The resume states India, while the questionnaire states India. No conflict detected."
+    },
+    {
+      "field": "Current Status",
+      "sources": [
+        "resume",
+        "questionnaire"
+      ],
+      "details": "The resume states F1 OPT STEM, while the questionnaire states F1 OPT STEM. No conflict detected."
+    }
+  ],
+  "documents_processed": [
+    "5e186d76-4a84-4b74-927d-ea9f11f5a1b2-Resume_JahnaviShah.docx.pdf"
+  ],
+  "readiness": "needs_more_info",
+  "attorney_notes": [
+    "More detailed evidence is needed for awards and publications.",
+    "Salary information should be provided to support the high_salary claim."
+  ],
+  "raw_model_notes": ""
+}
