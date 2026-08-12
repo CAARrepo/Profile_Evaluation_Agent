@@ -349,9 +349,5 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
             )
         )
 
-    story.append(_p("7. Recommended Next Steps", styles["h1"]))
-    for idx, step in enumerate(content.recommended_next_steps, start=1):
-        story.append(_p(f"{idx}. {step}", styles["body"]))
-
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
     return output_path
