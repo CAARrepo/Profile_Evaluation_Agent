@@ -5,12 +5,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Default: workspace root containing CSVs + lead-documents
+# Default: workspace root; input data lives under datasets/
 ROOT_DIR = Path(os.environ.get("INTAKE_ROOT", Path(__file__).resolve().parent.parent))
+DATASETS_DIR = Path(os.environ.get("INTAKE_DATASETS", ROOT_DIR / "datasets"))
 
-USER_INFO_CSV = ROOT_DIR / "User_Info.csv"
-QUESTIONNAIRE_CSV = ROOT_DIR / "Detailed_questionarie.csv"
-LEAD_DOCUMENTS_DIR = ROOT_DIR / "lead-documents"
+USER_INFO_CSV = DATASETS_DIR / "User_Info.csv"
+QUESTIONNAIRE_CSV = DATASETS_DIR / "Detailed_questionarie.csv"
+LEAD_DOCUMENTS_DIR = DATASETS_DIR / "lead-documents"
 OUTPUT_DIR = ROOT_DIR / "intake_outputs"
 
 # Best local model for RTX 4050 6GB: Qwen2.5-7B-Instruct (strong JSON / extraction)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .config import (
     MAX_DOCUMENT_CHARS,
@@ -21,7 +21,7 @@ from .schema import (
     CriterionIntake,
     EvidenceItem,
     EvidenceStatus,
-    MissingInfoRequest,
+    InformationGap,
     O1CriterionKey,
     StandardizedProfile,
 )
@@ -112,8 +112,11 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
         status = EvidenceStatus.MISSING
         evidence_items: list[EvidenceItem] = []
         gaps: list[str] = []
+        notes = ""
         if answer == "yes":
+            # MVP: Yes + details = applicant-stated claim assumed true for initial evaluation
             status = EvidenceStatus.CLAIM_ONLY
+            notes = "MVP: applicant-stated claim assumed true for initial evaluation; evidence not required"
             if details:
                 evidence_items.append(
                     EvidenceItem(
@@ -122,9 +125,6 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
                         excerpt=details[:800],
                     )
                 )
-                # URLs in details are still claims until Evidence Agents verify them
-                if details.lower().startswith("http"):
-                    gaps.append("Verify linked source belongs to applicant and substantively covers them/their work")
             else:
                 gaps.append("Applicant answered yes but provided no details")
         elif answer == "not_sure":
@@ -137,7 +137,8 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
                         excerpt=details[:800],
                     )
                 )
-            gaps.append("Applicant unsure — needs clarification")
+                notes = "MVP: applicant-stated claim (not_sure) passed through for initial evaluation"
+            gaps.append("Applicant marked not_sure for this criterion")
         elif answer == "no":
             status = EvidenceStatus.MISSING
 
@@ -148,6 +149,7 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
             evidence_status=status,
             evidence_items=evidence_items,
             gaps=gaps,
+            notes=notes,
         )
 
     # Ensure all criteria appear in the profile
@@ -158,45 +160,55 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
     return [seeded[k] for k in O1CriterionKey]
 
 
-def deterministic_missing(bundle: CaseBundle, identity: ApplicantIdentity) -> list[MissingInfoRequest]:
-    requests: list[MissingInfoRequest] = []
+def deterministic_information_gaps(
+    bundle: CaseBundle,
+    identity: ApplicantIdentity,
+    criteria: list[CriterionIntake],
+) -> list[InformationGap]:
+    """Record gaps for the Evaluation Agent; never block MVP processing."""
+    gaps: list[InformationGap] = []
     if not bundle.questionnaire:
-        requests.append(
-            MissingInfoRequest(
+        gaps.append(
+            InformationGap(
                 priority="high",
                 topic="questionnaire",
-                question="Please complete the O-1 detailed questionnaire.",
-                reason="No questionnaire answers found for this lead.",
+                detail="No questionnaire answers found for this lead.",
             )
         )
     if not bundle.document_texts:
-        requests.append(
-            MissingInfoRequest(
-                priority="high",
-                topic="resume",
-                question="Please upload a current résumé / CV (PDF or DOCX).",
-                reason="No documents found under lead-documents for this lead.",
+        gaps.append(
+            InformationGap(
+                priority="medium",
+                topic="documents",
+                detail="No documents found under datasets/lead-documents for this lead (optional for MVP).",
             )
         )
     if not identity.linkedin_url:
-        requests.append(
-            MissingInfoRequest(
-                priority="medium",
+        gaps.append(
+            InformationGap(
+                priority="low",
                 topic="linkedin",
-                question="Please provide your LinkedIn profile URL.",
-                reason="LinkedIn helps verify employment history and public recognition.",
+                detail="LinkedIn URL not provided.",
             )
         )
     if identity.us_job_offer in {"", "unknown"} and not identity.self_employment_planned:
-        requests.append(
-            MissingInfoRequest(
-                priority="high",
+        gaps.append(
+            InformationGap(
+                priority="medium",
                 topic="sponsorship",
-                question="Do you have a U.S. job offer or plan to pursue O-1 via a U.S. agent / self-employment?",
-                reason="O-1 requires a U.S. petitioner (employer or agent).",
+                detail="U.S. job offer / self-employment / agent path not clearly stated.",
             )
         )
-    return requests
+    for c in criteria:
+        for g in c.gaps:
+            gaps.append(
+                InformationGap(
+                    priority="medium" if c.applicant_answer == "yes" else "low",
+                    topic=f"criterion.{c.key.value}",
+                    detail=g,
+                )
+            )
+    return gaps
 
 
 def merge_profiles(
@@ -223,11 +235,29 @@ def merge_profiles(
     if not llm_profile.criteria:
         llm_profile.criteria = seeded.criteria
 
-    # Merge missing-info lists (dedupe by question)
-    seen = {m.question for m in llm_profile.missing_information}
-    for m in seeded.missing_information:
-        if m.question not in seen:
-            llm_profile.missing_information.append(m)
+    # MVP: fold any legacy missing_information into information_gaps; never ask follow-ups
+    for m in list(llm_profile.missing_information) + list(seeded.missing_information):
+        detail = getattr(m, "reason", None) or getattr(m, "question", None) or str(m)
+        llm_profile.information_gaps.append(
+            InformationGap(priority=getattr(m, "priority", "medium"), topic=getattr(m, "topic", "other"), detail=detail)
+        )
+    llm_profile.missing_information = []
+
+    seen = {(g.topic, g.detail) for g in llm_profile.information_gaps}
+    for g in seeded.information_gaps:
+        key = (g.topic, g.detail)
+        if key not in seen:
+            llm_profile.information_gaps.append(g)
+            seen.add(key)
+
+    # Ensure claims from seeded Yes answers are present
+    if not llm_profile.claims:
+        llm_profile.claims = seeded.claims
+    else:
+        claim_set = set(llm_profile.claims)
+        for c in seeded.claims:
+            if c not in claim_set:
+                llm_profile.claims.append(c)
 
     # Drop bogus "no conflict" rows some small models emit
     llm_profile.conflicts = [
@@ -240,8 +270,9 @@ def merge_profiles(
 
     if not llm_profile.summary:
         llm_profile.summary = seeded.summary
-    if llm_profile.readiness == "needs_more_info" and seeded.readiness == "incomplete":
-        llm_profile.readiness = "incomplete"
+
+    # MVP: gaps never block evaluation
+    llm_profile.readiness = "ready_for_evaluation"
     return llm_profile
 
 
@@ -260,23 +291,19 @@ class IntakeAgent:
     def build_seed_profile(self, bundle: CaseBundle) -> StandardizedProfile:
         identity = seed_identity(bundle)
         criteria = seed_criteria_from_questionnaire(bundle)
-        missing = deterministic_missing(bundle, identity)
+        info_gaps = deterministic_information_gaps(bundle, identity, criteria)
         docs = [d.get("filename") or d.get("path") or "" for d in bundle.document_texts]
 
         claims: list[str] = []
         for c in criteria:
             if c.applicant_answer in {"yes", "not_sure"} and c.claim_summary:
                 claims.append(f"{c.key.value}: {c.claim_summary}")
-
-        readiness = "ready_for_evidence_agents"
-        if not bundle.questionnaire or not bundle.document_texts:
-            readiness = "incomplete"
-        elif len(missing) >= 3:
-            readiness = "needs_more_info"
+            elif c.applicant_answer == "yes":
+                claims.append(f"{c.key.value}: (yes — no details provided)")
 
         name = f"{identity.first_name} {identity.last_name}".strip()
         summary = (
-            f"O-1 intake for {name or identity.lead_id}. "
+            f"O-1A intake for {name or identity.lead_id}. "
             f"Status={identity.current_status or 'unknown'}; "
             f"docs={len(docs)}; "
             f"positive/unsure criteria="
@@ -294,9 +321,10 @@ class IntakeAgent:
                 for d in docs
                 if d
             ],
-            missing_information=missing,
+            information_gaps=info_gaps,
+            missing_information=[],  # MVP: no applicant follow-ups
             documents_processed=docs,
-            readiness=readiness,  # type: ignore[arg-type]
+            readiness="ready_for_evaluation",
         )
 
     def run(self, lead_id: str) -> StandardizedProfile:

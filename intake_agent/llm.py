@@ -3,21 +3,46 @@
 from __future__ import annotations
 
 import json
+import os
 import re
-from typing import Any, Optional
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Iterator, Optional
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .config import OLLAMA_HOST, OLLAMA_MODEL
 
+_SSL_ENV_KEYS = ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
+
 
 class OllamaError(RuntimeError):
     pass
 
 
+@contextmanager
+def _clear_broken_ssl_env() -> Iterator[None]:
+    """Conda may set SSL_CERT_FILE to a missing cacert.pem, which breaks httpx."""
+    saved: dict[str, str] = {}
+    for key in _SSL_ENV_KEYS:
+        value = os.environ.get(key)
+        if value and not Path(value).is_file():
+            saved[key] = value
+            os.environ.pop(key, None)
+    try:
+        yield
+    finally:
+        os.environ.update(saved)
+
+
+def _client(**kwargs: Any) -> httpx.Client:
+    with _clear_broken_ssl_env():
+        return httpx.Client(**kwargs)
+
+
 def ensure_model_available(model: str = OLLAMA_MODEL, host: str = OLLAMA_HOST) -> None:
-    with httpx.Client(base_url=host, timeout=30.0) as client:
+    with _client(base_url=host, timeout=30.0) as client:
         try:
             resp = client.get("/api/tags")
             resp.raise_for_status()
@@ -56,7 +81,7 @@ def chat_json(
             {"role": "user", "content": user},
         ],
     }
-    with httpx.Client(base_url=host, timeout=300.0) as client:
+    with _client(base_url=host, timeout=300.0) as client:
         resp = client.post("/api/chat", json=payload)
         if resp.status_code >= 400:
             raise OllamaError(f"Ollama chat failed ({resp.status_code}): {resp.text[:500]}")

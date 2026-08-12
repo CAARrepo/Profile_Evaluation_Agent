@@ -1,0 +1,259 @@
+{
+  "case_id": "sample-eb1a-001",
+  "visa_category": "EB-1A",
+  "knowledge_base_version": "1.0.0",
+  "overall_profile_rating": "very_strong",
+  "criteria_summary": {
+    "strong": 3,
+    "potential": 4,
+    "weak": 0,
+    "not_indicated": 1,
+    "not_applicable": 2
+  },
+  "criteria": [
+    {
+      "criterion_id": "eb1a_awards",
+      "criterion_name": "Lesser Nationally or Internationally Recognized Prizes or Awards",
+      "status": "potential",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (awards): Best paper award at a major international ML conference"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Lesser Nationally or Internationally Recognized Prizes or Awards': Lesser Nationally or Internationally Recognized Prizes or Awards Applicant-stated facts are assumed true for MVP analysis only; status=potential is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Award certificate",
+        "Official rules",
+        "Selection statistics",
+        "Independent media",
+        "Issuer reputation",
+        "Prior recipients"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_membership",
+      "criterion_name": "Membership in Associations Requiring Outstanding Achievements",
+      "status": "potential",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (memberships): IEEE Senior Member selected for outstanding achievements"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Membership in Associations Requiring Outstanding Achievements': Membership in Associations Requiring Outstanding Achievements Applicant-stated facts are assumed true for MVP analysis only; status=potential is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Bylaws",
+        "Membership criteria",
+        "Selection committee information",
+        "Membership certificate",
+        "Selectivity statistics"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_published_material",
+      "criterion_name": "Published Material About the Applicant",
+      "status": "not_indicated",
+      "confidence": "high",
+      "applicant_facts": [],
+      "reasoning_summary": "No applicant-stated facts clearly map to 'Published Material About the Applicant'.",
+      "strengths": [],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb1a_judging",
+      "criterion_name": "Judging the Work of Others",
+      "status": "strong",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (judging): Program committee member judging ML conference submissions",
+        "Applicant states (peer_review): Regular peer reviewer for NeurIPS and ICML"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Judging the Work of Others': Judging the Work of Others Applicant-stated facts are assumed true for MVP analysis only; status=strong is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Completed peer review records",
+        "Editorial system screenshots",
+        "Judge invitations plus completion proof",
+        "Competition panel listings",
+        "Grant review documentation"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_original_contributions",
+      "criterion_name": "Original Contributions of Major Significance",
+      "status": "strong",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (patents): Granted U.S. patent on neural ranking methods with demonstrated industry adoption",
+        "Applicant states (conferences): Invited talks at international ML workshops"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Original Contributions of Major Significance': Original Contributions of Major Significance Applicant-stated facts are assumed true for MVP analysis only; status=strong is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Independent expert letters",
+        "Citation analysis",
+        "Patent use/licensing",
+        "Customer adoption",
+        "Industry references",
+        "Quantified impact",
+        "Standards documentation"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_scholarly_articles",
+      "criterion_name": "Authorship of Scholarly Articles",
+      "status": "strong",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (publications): Authored 12 scholarly articles in peer-reviewed ML venues with citations",
+        "Applicant states (google_scholar): https://scholar.google.com/citations?user=example",
+        "Applicant states (conferences): Invited talks at international ML workshops"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Authorship of Scholarly Articles': Authorship of Scholarly Articles Applicant-stated facts are assumed true for MVP analysis only; status=strong is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Article copies",
+        "Bibliographic records",
+        "Venue information",
+        "Citation data",
+        "Peer-review information"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_artistic_display",
+      "criterion_name": "Display of Work at Artistic Exhibitions or Showcases",
+      "status": "not_applicable",
+      "confidence": "high",
+      "applicant_facts": [],
+      "reasoning_summary": "'Display of Work at Artistic Exhibitions or Showcases' does not appear applicable to the applicant's stated field/occupation based on intake context.",
+      "strengths": [],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb1a_leading_critical_role",
+      "criterion_name": "Leading or Critical Role for Distinguished Organizations",
+      "status": "potential",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (critical_role): Leading role directing ML research team at distinguished research institute"
+      ],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'Leading or Critical Role for Distinguished Organizations': Leading or Critical Role for Distinguished Organizations Applicant-stated facts are assumed true for MVP analysis only; status=potential is not a final merits or eligibility determination.",
+      "strengths": [
+        "Stated facts appear to address multiple required elements of the criterion.",
+        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Detailed letters",
+        "Organization reputation evidence",
+        "Org charts",
+        "Leadership scope",
+        "Project outcome metrics",
+        "Revenue/adoption/funding impact"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_high_salary",
+      "criterion_name": "High Salary or Significantly High Remuneration",
+      "status": "potential",
+      "confidence": "low",
+      "applicant_facts": [],
+      "reasoning_summary": "Preliminary EB-1A mapping for 'High Salary or Significantly High Remuneration': High Salary or Significantly High Remuneration Applicant-stated facts are assumed true for MVP analysis only; status=potential is not a final merits or eligibility determination.",
+      "strengths": [],
+      "weaknesses": [
+        "Applicant marked not_sure."
+      ],
+      "information_gaps": [],
+      "recommended_evidence": [
+        "Tax/pay records",
+        "Contracts",
+        "Offers",
+        "Bonus/equity documentation",
+        "Reliable compensation benchmarks"
+      ]
+    },
+    {
+      "criterion_id": "eb1a_commercial_success_performing_arts",
+      "criterion_name": "Commercial Successes in the Performing Arts",
+      "status": "not_applicable",
+      "confidence": "high",
+      "applicant_facts": [],
+      "reasoning_summary": "'Commercial Successes in the Performing Arts' does not appear applicable to the applicant's stated field/occupation based on intake context.",
+      "strengths": [],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    }
+  ],
+  "final_merits": {
+    "sustained_acclaim_assessment": "Final-merits (preliminary): Does the total evidence demonstrate sustained national or international acclaim and show the applicant is among the small percentage at the very top of the field? Currently 7 criteria rate strong/potential on stated facts.",
+    "threshold_criteria_count": 7,
+    "major_award_path_possible": false,
+    "notes": [
+      "Meeting three regulatory criteria does not, by itself, establish EB-1A eligibility.",
+      "Exactly three marginal criteria with little overall acclaim.",
+      "Predominantly self-generated evidence."
+    ]
+  },
+  "underlying_eb2": null,
+  "niw_prongs": [],
+  "top_strengths": [
+    "Lesser Nationally or Internationally Recognized Prizes or Awards (potential)",
+    "Membership in Associations Requiring Outstanding Achievements (potential)",
+    "Judging the Work of Others (strong)",
+    "Original Contributions of Major Significance (strong)",
+    "Authorship of Scholarly Articles (strong)"
+  ],
+  "top_risks": [],
+  "recommended_next_evidence": [
+    "Award certificate",
+    "Official rules",
+    "Selection statistics",
+    "Independent media",
+    "Issuer reputation",
+    "Prior recipients",
+    "Bylaws",
+    "Membership criteria",
+    "Selection committee information",
+    "Membership certificate"
+  ],
+  "attorney_review_required": true,
+  "disclaimer": "Preliminary AI-assisted profile assessment only. Final eligibility requires attorney review.",
+  "raw_notes": {
+    "two_step_evaluation": {
+      "step_1_regulatory_criteria": "Determine whether applicant has a one-time major internationally recognized achievement or satisfies at least 3 of 10 evidentiary criteria.",
+      "step_2_final_merits": "Evaluate all evidence together to determine whether the applicant has sustained acclaim and is among the small percentage at the very top of the field.",
+      "critical_warning": "Meeting three regulatory criteria does not, by itself, establish EB-1A eligibility."
+    },
+    "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only."
+  }
+}

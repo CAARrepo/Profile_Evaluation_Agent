@@ -1,0 +1,146 @@
+{
+  "case_id": "sample-niw-001",
+  "identity": {
+    "lead_id": "sample-niw-001",
+    "first_name": "Sam",
+    "last_name": "Okoye",
+    "immigration_category": "EB2_NIW"
+  },
+  "field_of_endeavor": "Developing open climate-risk AI models for U.S. infrastructure planning",
+  "summary": "Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+  "employment": [
+    {
+      "organization": "National Lab Partner",
+      "title": "Research Scientist",
+      "responsibilities": ["Built climate risk models used by municipal agencies"],
+      "source": "resume"
+    },
+    {
+      "organization": "University Research Center",
+      "title": "Postdoctoral Fellow",
+      "responsibilities": ["Published climate informatics research"],
+      "source": "resume"
+    }
+  ],
+  "education": [
+    {
+      "institution": "UC Berkeley",
+      "degree": "Ph.D. Environmental Engineering",
+      "field": "Climate modeling",
+      "source": "resume"
+    }
+  ],
+  "criteria": [
+    {
+      "key": "awards",
+      "applicant_answer": "yes",
+      "claim_summary": "National early-career research award in environmental engineering",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "memberships",
+      "applicant_answer": "yes",
+      "claim_summary": "Professional association membership in environmental engineering",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "media",
+      "applicant_answer": "yes",
+      "claim_summary": "Covered by national science media for climate-risk modeling work",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "peer_review",
+      "applicant_answer": "yes",
+      "claim_summary": "Peer reviewer for climate informatics journals",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "judging",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "patents",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "publications",
+      "applicant_answer": "yes",
+      "claim_summary": "Multiple peer-reviewed publications on climate-risk AI",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "critical_role",
+      "applicant_answer": "yes",
+      "claim_summary": "Critical role advancing open models adopted by public agencies",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "high_salary",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "conferences",
+      "applicant_answer": "yes",
+      "claim_summary": "Presented climate AI research at national conferences",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "google_scholar",
+      "applicant_answer": "yes",
+      "claim_summary": "https://scholar.google.com/citations?user=niw-example",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    }
+  ],
+  "claims": [
+    "field: Developing open climate-risk AI models for U.S. infrastructure planning",
+    "publications: Multiple peer-reviewed publications on climate-risk AI"
+  ],
+  "information_gaps": [
+    {
+      "priority": "medium",
+      "topic": "niw_prong_3",
+      "detail": "No explicit waiver-benefit argument provided in questionnaire."
+    }
+  ],
+  "readiness": "ready_for_evaluation"
+}

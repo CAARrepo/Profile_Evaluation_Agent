@@ -1,4 +1,4 @@
-"""Standardized O-1 intake profile schema."""
+"""Standardized O-1A intake profile schema."""
 
 from __future__ import annotations
 
@@ -65,10 +65,20 @@ class EducationRecord(BaseModel):
 
 
 class MissingInfoRequest(BaseModel):
+    """Follow-up question to the applicant (kept for future evidence stage; unused in MVP)."""
+
     priority: Literal["high", "medium", "low"] = "medium"
     topic: str
     question: str
     reason: str
+
+
+class InformationGap(BaseModel):
+    """Recorded gap for the Evaluation Agent / final report — not a user-facing follow-up."""
+
+    priority: Literal["high", "medium", "low"] = "medium"
+    topic: str
+    detail: str
 
 
 class ConflictItem(BaseModel):
@@ -112,10 +122,22 @@ class StandardizedProfile(BaseModel):
     criteria: list[CriterionIntake] = Field(default_factory=list)
     claims: list[str] = Field(default_factory=list)
     evidence_index: list[EvidenceItem] = Field(default_factory=list)
-    missing_information: list[MissingInfoRequest] = Field(default_factory=list)
+    information_gaps: list[InformationGap] = Field(
+        default_factory=list,
+        description="Missing details/docs for Evaluation Agent; never blocks MVP evaluation",
+    )
+    missing_information: list[MissingInfoRequest] = Field(
+        default_factory=list,
+        description="Applicant follow-ups (future evidence stage; empty in MVP)",
+    )
     conflicts: list[ConflictItem] = Field(default_factory=list)
     documents_processed: list[str] = Field(default_factory=list)
-    readiness: Literal["ready_for_evidence_agents", "needs_more_info", "incomplete"] = "needs_more_info"
+    readiness: Literal[
+        "ready_for_evaluation",
+        "ready_for_evidence_agents",
+        "needs_more_info",
+        "incomplete",
+    ] = "ready_for_evaluation"
     attorney_notes: list[str] = Field(
         default_factory=list,
         description="Non-legal factual flags for attorney review; not advice",

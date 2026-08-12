@@ -23,7 +23,7 @@
     "explore_agent_option": "yes"
   },
   "field_of_endeavor": "AI & Tech Content Creation, Product Management",
-  "summary": "Jahnavi Shah is an AI and tech content creator with experience in product management. She has been featured by Business Insider, Cornell Daily Sun, and Study International UK. Jahnavi holds a Master of Engineering in Engineering Management from Cornell University.",
+  "summary": "Jahnavi Shah is an AI and tech content creator with experience in product management. She has been featured in media outlets such as Business Insider and Cornell Daily Sun, and holds a Master of Engineering from Cornell University.",
   "employment": [
     {
       "organization": "Clay Labs",
@@ -80,8 +80,7 @@
       "start_date": "Jan’ 23 - May’ 23",
       "end_date": "",
       "responsibilities": [
-        "Analysed Gen-Z behaviour and proposed strategies to increase LinkedIn Premium’s subscription revenue.",
-        "Utilized advanced analytical techniques."
+        "Analysed Gen-Z behaviour and proposed strategies to increase LinkedIn Premium’s subscription revenue."
       ],
       "source": "resume"
     }
@@ -90,15 +89,15 @@
     {
       "institution": "Cornell University",
       "degree": "Master of Engineering in Engineering Management",
-      "field": "",
-      "dates": "Present",
+      "field": "Engineering Management",
+      "dates": "GPA: 4.05",
       "source": "resume"
     },
     {
       "institution": "Pandit Deendayal Energy University",
       "degree": "Bachelor of Science in Computer Science",
-      "field": "",
-      "dates": "Present",
+      "field": "Computer Science",
+      "dates": "GPA: 3.98",
       "source": "resume"
     }
   ],
@@ -109,9 +108,7 @@
       "claim_summary": "Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)",
       "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No supporting documents or URLs provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
@@ -120,9 +117,7 @@
       "claim_summary": "LinkedIn Creator Accelerator Program and LinkedIn Top Voice",
       "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No supporting documents or URLs provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
@@ -131,9 +126,7 @@
       "claim_summary": "- **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S.",
       "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No supporting documents or URLs provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
@@ -151,9 +144,7 @@
       "claim_summary": "Startup Hackathon in SF",
       "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No supporting documents or URLs provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
@@ -162,9 +153,7 @@
       "claim_summary": "Design Patent in India but never launched so no impact to show",
       "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No supporting documents or URLs provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
@@ -179,8 +168,8 @@
     {
       "key": "critical_role",
       "applicant_answer": "yes",
-      "claim_summary": "Owned post-deployment strategy for 40+ enterprise and SMB customers, managing full customer lifecycle from onboarding through expansion.",
-      "evidence_status": "supported",
+      "claim_summary": "",
+      "evidence_status": "claim_only",
       "evidence_items": [],
       "gaps": [],
       "notes": ""
@@ -189,18 +178,16 @@
       "key": "high_salary",
       "applicant_answer": "yes",
       "claim_summary": "",
-      "evidence_status": "missing",
+      "evidence_status": "claim_only",
       "evidence_items": [],
-      "gaps": [
-        "No salary information provided."
-      ],
+      "gaps": [],
       "notes": ""
     },
     {
       "key": "conferences",
       "applicant_answer": "yes",
       "claim_summary": "Spoken and hosted multiple workshops",
-      "evidence_status": "supported",
+      "evidence_status": "claim_only",
       "evidence_items": [],
       "gaps": [],
       "notes": ""
@@ -216,78 +203,57 @@
     }
   ],
   "claims": [
-    "I have been featured by Business Insider, Cornell Daily Sun, and Study International UK.",
-    "I am a member of the LinkedIn Creator Accelerator Program and LinkedIn Top Voice.",
-    "I hold a Master of Engineering in Engineering Management from Cornell University.",
-    "I played a critical role at Clay Labs, managing post-deployment strategy for 40+ enterprise and SMB customers."
+    "Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)",
+    "- **Business Insider** — featured (details to be confirmed/added)",
+    "- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)",
+    "- **Study International UK** — featured in article on applying for jobs in the U.S.",
+    "Startup Hackathon in SF",
+    "Design Patent in India but never launched so no impact to show",
+    "Spoken and hosted multiple workshops",
+    "awards: Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023) — national recognition among career creators",
+    "memberships: LinkedIn Creator Accelerator Program and LinkedIn Top Voice",
+    "media: - **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S.",
+    "judging: Startup Hackathon in SF",
+    "patents: Design  Patent in India but never launched so no impact to show",
+    "critical_role: (yes — no details provided)",
+    "high_salary: (yes — no details provided)",
+    "conferences: I've spoken and hosted multiple workshops"
   ],
   "evidence_index": [
     {
       "source": "resume",
       "reference": "5e186d76-4a84-4b74-927d-ea9f11f5a1b2-Resume_JahnaviShah.docx.pdf",
-      "excerpt": "Product Support Specialist at Clay Labs, Product Deployment Strategist at Persona, AI Product Manager at Wonsulting, and Student Consultant (APM) at LinkedIn."
-    },
-    {
-      "source": "questionnaire",
-      "reference": "sectionB.media.details",
-      "excerpt": "- **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S."
-    },
-    {
-      "source": "questionnaire",
-      "reference": "sectionB.awards.details",
-      "excerpt": "Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)"
-    },
-    {
-      "source": "questionnaire",
-      "reference": "sectionB.memberships.details",
-      "excerpt": "LinkedIn Creator Accelerator Program and LinkedIn Top Voice"
+      "excerpt": ""
     }
   ],
-  "missing_information": [
-    {
-      "priority": "medium",
-      "topic": "Awards",
-      "question": "Provide supporting documents or URLs for the awards mentioned.",
-      "reason": "No evidence provided to support claims."
-    },
+  "information_gaps": [
     {
       "priority": "medium",
       "topic": "Publications",
-      "question": "Provide any publications related to your work in AI and tech content creation.",
-      "reason": "No supporting documents or URLs provided."
+      "detail": "No specific publications mentioned."
     },
     {
-      "priority": "high",
-      "topic": "Salary Information",
-      "question": "Please provide salary information for the positions mentioned.",
-      "reason": "Required for high_salary criterion support."
-    }
-  ],
-  "conflicts": [
-    {
-      "field": "Country of Citizenship",
-      "sources": [
-        "resume",
-        "questionnaire"
-      ],
-      "details": "The resume states India, while the questionnaire states India. No conflict detected."
+      "priority": "medium",
+      "topic": "Google Scholar",
+      "detail": "No Google Scholar URL provided."
     },
     {
-      "field": "Current Status",
-      "sources": [
-        "resume",
-        "questionnaire"
-      ],
-      "details": "The resume states F1 OPT STEM, while the questionnaire states F1 OPT STEM. No conflict detected."
+      "priority": "medium",
+      "topic": "criterion.critical_role",
+      "detail": "Applicant answered yes but provided no details"
+    },
+    {
+      "priority": "medium",
+      "topic": "criterion.high_salary",
+      "detail": "Applicant answered yes but provided no details"
     }
   ],
+  "missing_information": [],
+  "conflicts": [],
   "documents_processed": [
     "5e186d76-4a84-4b74-927d-ea9f11f5a1b2-Resume_JahnaviShah.docx.pdf"
   ],
-  "readiness": "needs_more_info",
-  "attorney_notes": [
-    "More detailed evidence is needed for awards and publications.",
-    "Salary information should be provided to support the high_salary claim."
-  ],
+  "readiness": "ready_for_evaluation",
+  "attorney_notes": [],
   "raw_model_notes": ""
 }

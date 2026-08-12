@@ -1,0 +1,543 @@
+{
+  "knowledge_base_metadata": {
+    "title": "EB-2 National Interest Waiver (NIW) Evaluation Knowledge Base",
+    "version": "1.0.0",
+    "generated_date": "2026-08-11",
+    "jurisdictions": [
+      "United States"
+    ],
+    "visa_categories": [
+      "EB2 NIW"
+    ],
+    "purpose": "Structured knowledge base for an AI-powered preliminary profile evaluation agent.",
+    "intended_use": [
+      "Map applicant-stated facts to potentially relevant immigration criteria.",
+      "Identify strengths, weaknesses, information gaps, and recommended supporting evidence.",
+      "Produce a preliminary evaluation for later attorney review.",
+      "Avoid blocking evaluation solely because evidence documents are not uploaded during intake."
+    ],
+    "not_intended_use": [
+      "Do not make a binding legal eligibility determination.",
+      "Do not guarantee approval.",
+      "Do not treat criterion-counting alone as sufficient for approval.",
+      "Do not invent facts, evidence, citations, metrics, dates, or achievements.",
+      "Do not replace attorney review."
+    ],
+    "global_evaluation_principles": {
+      "applicant_statement_handling": "For the MVP, when an applicant affirmatively states a fact, the evaluator may assume the statement is true solely for preliminary profile analysis, while clearly distinguishing an unverified applicant statement from documented evidence.",
+      "missing_documents": "Absence of an uploaded document must not automatically convert a stated achievement to 'not met'. Record the document as recommended or missing evidence.",
+      "missing_information": "Do not ask follow-up questions in the Intake Agent. Record missing details and present them in the evaluation report.",
+      "burden_and_standard": "The petitioner or self-petitioner ultimately bears the burden to establish eligibility by the applicable evidentiary standard. The evaluation agent should assess plausibility and evidence strength, not adjudicate.",
+      "no_double_counting_rule": "A single fact may be relevant to more than one analytical issue, but the evaluator should explain the distinct relevance rather than artificially multiplying the same achievement.",
+      "quality_over_quantity": "Multiple weak documents do not necessarily establish a criterion or overall eligibility. Favor independent, objective, specific, verifiable evidence.",
+      "independence": "Independent evidence and recognition generally carry more persuasive value than self-authored descriptions or letters from closely interested parties when the legal issue is external recognition or impact.",
+      "context_matters": "Evaluate achievements relative to the applicant's field, career stage, occupation, geography, industry norms, and the specific legal language of the criterion.",
+      "confidence_scale": {
+        "high": "Applicant's facts clearly map to the criterion and contain meaningful objective details.",
+        "medium": "Potentially relevant facts exist, but important details or corroboration are missing.",
+        "low": "Facts are vague, tangential, or may not satisfy the legal concept without significant additional information."
+      },
+      "criterion_status_scale": {
+        "strong": "Applicant-stated facts appear to align well with the criterion and suggest persuasive evidence could exist.",
+        "potential": "Facts may satisfy the criterion, but key legal or factual elements require clarification or stronger evidence.",
+        "weak": "Some related facts exist, but they currently appear materially below the criterion's requirements.",
+        "not_indicated": "No facts supplied appear to support the criterion.",
+        "not_applicable": "Criterion is generally not suited to the occupation or facts; comparable evidence may be considered where legally allowed."
+      },
+      "overall_profile_scale": {
+        "very_strong": "Multiple strong qualifying areas plus persuasive evidence of sustained acclaim, major impact, or national importance, depending on category.",
+        "strong": "Several meaningful qualifying areas and a coherent overall case, with manageable evidentiary gaps.",
+        "promising": "Some viable criteria/prongs, but significant gaps remain before a strong filing position can be assessed.",
+        "developing": "Profile contains useful achievements but currently lacks breadth, depth, impact, or documentation.",
+        "insufficient_information": "Too little substantive information exists for a meaningful preliminary assessment."
+      }
+    },
+    "primary_sources": [
+      {
+        "name": "8 CFR 214.2(o)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-214/subpart-A/section-214.2",
+        "relevance": "O-1 regulatory definitions, evidentiary criteria, petition requirements, comparable evidence."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 2, Part M, Chapter 4",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-2-part-m-chapter-4",
+        "relevance": "O-1 adjudicative guidance and evaluation of evidence."
+      },
+      {
+        "name": "8 CFR 204.5(h)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-204/subpart-A/section-204.5",
+        "relevance": "EB-1A extraordinary ability criteria."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 6, Part F, Chapter 2",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-6-part-f-chapter-2",
+        "relevance": "EB-1A two-step analysis and final merits guidance."
+      },
+      {
+        "name": "8 CFR 204.5(k)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-204/subpart-A/section-204.5",
+        "relevance": "Underlying EB-2 advanced degree and exceptional ability requirements."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 6, Part F, Chapter 5",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-6-part-f-chapter-5",
+        "relevance": "EB-2 eligibility and National Interest Waiver guidance."
+      },
+      {
+        "name": "USCIS NIW Policy Update, January 15, 2025",
+        "type": "USCIS policy alert",
+        "url": "https://www.uscis.gov/sites/default/files/document/policy-manual-updates/20250115-Employment-BasedNationalInterestWaivers.pdf",
+        "relevance": "Updated NIW guidance, including eligibility for the underlying EB-2 classification and Dhanasar analysis."
+      }
+    ]
+  },
+  "EB2_NIW": {
+    "display_name": "EB-2 National Interest Waiver (NIW)",
+    "classification_type": "employment-based immigrant / permanent residence classification",
+    "core_structure": "The applicant must first qualify for the underlying EB-2 classification as an advanced-degree professional or person of exceptional ability, and then satisfy all three NIW prongs.",
+    "self_petition": true,
+    "labor_certification_waiver": "The national interest waiver, if granted, waives the job-offer and labor-certification requirements.",
+    "part_1_underlying_EB2": {
+      "advanced_degree_path": {
+        "path_id": "eb2_advanced_degree",
+        "legal_standard": "Applicant must be a member of the professions holding an advanced degree or equivalent.",
+        "qualifying_routes": [
+          {
+            "route": "advanced_degree",
+            "requirements": [
+              "U.S. academic or professional degree above a bachelor's degree, or foreign equivalent."
+            ],
+            "recommended_evidence": [
+              "Diploma",
+              "Official transcript",
+              "Credential evaluation for foreign degree when appropriate"
+            ]
+          },
+          {
+            "route": "bachelors_plus_five",
+            "requirements": [
+              "U.S. bachelor's degree or foreign equivalent.",
+              "At least five years of progressive post-baccalaureate experience in the specialty."
+            ],
+            "recommended_evidence": [
+              "Bachelor's diploma/transcript",
+              "Employer experience letters",
+              "Detailed job progression",
+              "Dates and progressively responsible duties"
+            ]
+          }
+        ],
+        "evaluation_questions": [
+          "What is applicant's highest degree?",
+          "Is degree related to proposed endeavor or profession?",
+          "If relying on bachelor's plus five, is the experience post-baccalaureate and progressive?",
+          "Is applicant's proposed occupation a profession?"
+        ],
+        "common_weaknesses": [
+          "Five years experience not shown to be progressive.",
+          "Foreign degree equivalency unclear.",
+          "Degree does not establish applicant is a member of the profession relevant to proposed endeavor."
+        ]
+      },
+      "exceptional_ability_path": {
+        "path_id": "eb2_exceptional_ability",
+        "legal_standard": "Exceptional ability means a degree of expertise significantly above that ordinarily encountered in the sciences, arts, or business.",
+        "minimum_regulatory_threshold": "At least 3 of the 6 regulatory categories, unless comparable evidence is appropriate.",
+        "criteria": [
+          {
+            "criterion_id": "eb2_ea_academic_record",
+            "number": 1,
+            "name": "Academic Record Related to Area of Exceptional Ability",
+            "concept": "Degree, diploma, certificate, or similar award from an institution of learning relating to the area of exceptional ability.",
+            "evidence": [
+              "Diploma",
+              "Transcript",
+              "Certificate",
+              "Credential evaluation"
+            ]
+          },
+          {
+            "criterion_id": "eb2_ea_ten_years_experience",
+            "number": 2,
+            "name": "At Least Ten Years of Full-Time Experience",
+            "concept": "Letters from current or former employers showing at least ten years of full-time experience in the occupation.",
+            "evidence": [
+              "Employer letters",
+              "Employment records",
+              "Tax/pay records where useful"
+            ],
+            "gap_flags": [
+              "Dates missing",
+              "Full-time status unclear",
+              "Occupation mismatch"
+            ]
+          },
+          {
+            "criterion_id": "eb2_ea_license_certification",
+            "number": 3,
+            "name": "License or Certification",
+            "concept": "License to practice the profession or certification for the profession or occupation.",
+            "evidence": [
+              "Professional license",
+              "Certification records",
+              "Issuer verification"
+            ],
+            "gap_flags": [
+              "Certification unrelated to occupation",
+              "Expired/non-professional certificate"
+            ]
+          },
+          {
+            "criterion_id": "eb2_ea_salary",
+            "number": 4,
+            "name": "Salary or Remuneration Demonstrating Exceptional Ability",
+            "concept": "Evidence applicant commanded salary or remuneration that demonstrates exceptional ability.",
+            "evidence": [
+              "Pay records",
+              "Tax records",
+              "Contracts",
+              "Market wage comparisons"
+            ],
+            "gap_flags": [
+              "No comparator",
+              "Compensation not exceptional relative to peers"
+            ]
+          },
+          {
+            "criterion_id": "eb2_ea_professional_membership",
+            "number": 5,
+            "name": "Membership in Professional Associations",
+            "concept": "Evidence of membership in professional associations.",
+            "evidence": [
+              "Membership certificate",
+              "Association records"
+            ],
+            "note": "Unlike EB-1A/O-1A membership criteria, the regulation here does not itself require that membership be based on outstanding achievement."
+          },
+          {
+            "criterion_id": "eb2_ea_recognition",
+            "number": 6,
+            "name": "Recognition for Achievements and Significant Contributions",
+            "concept": "Recognition by peers, government entities, or professional/business organizations for achievements and significant contributions to industry or field.",
+            "evidence": [
+              "Awards",
+              "Government recognition",
+              "Professional letters",
+              "Industry recognition",
+              "Press coverage",
+              "Evidence of significant contributions"
+            ],
+            "gap_flags": [
+              "Recognition is generic",
+              "No significant contribution described",
+              "Only employer praise"
+            ]
+          }
+        ],
+        "comparable_evidence": "Comparable evidence may be considered if listed standards do not readily apply to the occupation.",
+        "important_note": "Meeting three regulatory categories establishes only the initial evidentiary threshold; the evidence must still support the overall concept of expertise significantly above that ordinarily encountered."
+      }
+    },
+    "part_2_NIW_three_prongs": {
+      "framework_name": "Matter of Dhanasar",
+      "all_prongs_required": true,
+      "prongs": [
+        {
+          "prong_id": "niw_prong_1",
+          "number": 1,
+          "name": "Substantial Merit and National Importance",
+          "legal_concept": "The proposed endeavor must have both substantial merit and national importance.",
+          "substantial_merit": {
+            "analysis": "Merit may be demonstrated in fields such as business, entrepreneurship, science, technology, culture, health, or education and does not necessarily require immediate quantifiable economic impact.",
+            "evaluation_questions": [
+              "What specific endeavor does applicant propose to pursue in the United States?",
+              "What problem, need, opportunity, or objective does it address?",
+              "Why is the endeavor valuable?",
+              "What concrete outcomes could result?"
+            ],
+            "strong_indicators": [
+              "Clear societal, scientific, technological, economic, health, educational, cultural, or business value.",
+              "Specific endeavor rather than broad occupational description.",
+              "Objective evidence supporting importance of problem being addressed."
+            ],
+            "weak_indicators": [
+              "Generic statement such as 'work as a software engineer'.",
+              "Personal career benefit without broader value.",
+              "Vague plans lacking a defined endeavor."
+            ]
+          },
+          "national_importance": {
+            "analysis": "Focus on the prospective impact of the specific endeavor, including broader implications beyond a single employer or customer. National importance does not necessarily require nationwide geographic scope.",
+            "evaluation_questions": [
+              "What prospective impact does the endeavor have?",
+              "Could it influence an industry, field, region, public interest, critical technology, workforce, health, education, or economic activity?",
+              "Does it have broader implications beyond one employer?",
+              "Is there evidence of government, industry, or public need?",
+              "For entrepreneurship, is there credible potential for job creation, revenue, innovation, investment, market expansion, or other broader impact?"
+            ],
+            "strong_indicators": [
+              "Potential to broadly advance a field or industry.",
+              "Work relevant to critical/emerging technology or significant U.S. priorities, when supported by evidence.",
+              "Meaningful public-health, education, infrastructure, security, economic, or societal implications.",
+              "Entrepreneurial endeavor with credible broader economic or innovation impact.",
+              "Research with prospective influence beyond one institution."
+            ],
+            "weak_indicators": [
+              "Benefits primarily one employer.",
+              "Ordinary job duties with no broader implications.",
+              "Assertions of national importance based only on occupation shortage.",
+              "Large industry size without explaining applicant's specific endeavor."
+            ],
+            "recommended_evidence": [
+              "Detailed proposed endeavor statement",
+              "Government reports",
+              "Industry reports",
+              "Market studies",
+              "Research literature",
+              "Letters from knowledgeable independent stakeholders",
+              "Evidence of U.S. demand/priority",
+              "Business plan where relevant",
+              "Customer/partner interest",
+              "Funding or investment",
+              "Pilot/project results"
+            ]
+          },
+          "common_information_gaps": [
+            "Proposed endeavor not clearly defined.",
+            "National importance confused with importance of profession.",
+            "No prospective impact analysis.",
+            "No connection between applicant's activity and claimed national benefit."
+          ]
+        },
+        {
+          "prong_id": "niw_prong_2",
+          "number": 2,
+          "name": "Well Positioned to Advance the Proposed Endeavor",
+          "legal_concept": "Applicant must be well positioned to advance the proposed endeavor; success is not required to be guaranteed.",
+          "evaluation_dimensions": [
+            {
+              "dimension": "education_skills_knowledge_record",
+              "questions": [
+                "Does applicant have education, specialized knowledge, skills, or experience relevant to endeavor?",
+                "What past achievements demonstrate capability?"
+              ]
+            },
+            {
+              "dimension": "record_of_success",
+              "questions": [
+                "Has applicant previously advanced similar work?",
+                "Are there measurable results, publications, patents, products, deployments, revenue, citations, grants, awards, or other accomplishments?"
+              ]
+            },
+            {
+              "dimension": "progress_toward_endeavor",
+              "questions": [
+                "Has applicant already taken concrete steps?",
+                "Are there prototypes, research results, incorporation, funding, contracts, customers, partnerships, licenses, or project plans?"
+              ]
+            },
+            {
+              "dimension": "interest_support",
+              "questions": [
+                "Do customers, investors, government entities, universities, industry organizations, employers, or other stakeholders show interest?",
+                "Are there letters, contracts, grants, invitations, funding, or collaborations?"
+              ]
+            }
+          ],
+          "strong_indicators": [
+            "Past record directly related to endeavor.",
+            "Objective achievements demonstrating capability.",
+            "Independent stakeholder support.",
+            "Funding, grants, investment, contracts, or credible partnerships.",
+            "Relevant publications/patents with demonstrated impact.",
+            "Operational progress on entrepreneurial endeavor.",
+            "Specialized expertise difficult to replicate."
+          ],
+          "weak_indicators": [
+            "Strong credentials but little connection to proposed endeavor.",
+            "Future aspiration without evidence of progress.",
+            "Generic recommendation letters.",
+            "Business plan unsupported by market evidence or execution history.",
+            "Reliance only on academic degree."
+          ],
+          "recommended_evidence": [
+            "CV/resume",
+            "Degrees and credentials",
+            "Publications and citation evidence",
+            "Patents and implementation evidence",
+            "Past project results",
+            "Awards",
+            "Funding/grants",
+            "Business formation documents",
+            "Revenue/customer metrics",
+            "Contracts/LOIs",
+            "Letters from independent experts or stakeholders",
+            "Media/industry recognition",
+            "Licenses/certifications"
+          ],
+          "common_information_gaps": [
+            "Endeavor and past record are disconnected.",
+            "No objective evidence of progress.",
+            "Stakeholder interest not documented.",
+            "Achievements stated without measurable results."
+          ]
+        },
+        {
+          "prong_id": "niw_prong_3",
+          "number": 3,
+          "name": "On Balance, Beneficial to Waive Job Offer and Labor Certification",
+          "legal_concept": "On balance, it must be beneficial to the United States to waive the requirements of a job offer and labor certification.",
+          "evaluation_questions": [
+            "Would requiring a specific job offer or labor certification impractically restrict the endeavor?",
+            "Does the endeavor benefit from flexibility to work across employers, institutions, clients, projects, or through entrepreneurship?",
+            "Even assuming U.S. workers may be available, are there benefits from applicant's specific contributions?",
+            "Is there urgency, specialized expertise, unique positioning, entrepreneurship, or broad public benefit supporting the waiver?",
+            "How would the United States benefit from allowing the applicant to advance the endeavor without the normal labor-certification process?"
+          ],
+          "strong_indicators": [
+            "Entrepreneurial or self-directed endeavor not naturally tied to one permanent job offer.",
+            "Work involving collaborations across organizations.",
+            "Applicant has unusual expertise or momentum whose contributions would provide benefits beyond a conventional employer role.",
+            "Time-sensitive or important endeavor where labor-certification constraints could impede progress.",
+            "Clear national benefit tied to applicant's specific contributions."
+          ],
+          "weak_indicators": [
+            "Argument merely states applicant is qualified.",
+            "Argument merely states PERM takes time.",
+            "No explanation why waiver benefits the United States.",
+            "Endeavor appears indistinguishable from ordinary employer-sponsored work."
+          ],
+          "recommended_evidence": [
+            "Endeavor structure and work plan",
+            "Contracts/engagements with multiple entities",
+            "Entrepreneurial documentation",
+            "Stakeholder letters",
+            "Evidence of specialized expertise",
+            "Evidence of urgency or public/industry need",
+            "Explanation of why labor certification is poorly suited to endeavor"
+          ],
+          "common_information_gaps": [
+            "No waiver-specific argument.",
+            "Benefits described only to applicant.",
+            "No link between applicant's specific profile and U.S. benefit."
+          ]
+        }
+      ]
+    },
+    "niw_special_evaluation_topics": {
+      "entrepreneurs": {
+        "agent_focus": [
+          "Ownership and role",
+          "Business model",
+          "Product/service",
+          "Market need",
+          "Traction",
+          "Funding",
+          "Revenue",
+          "Job creation",
+          "Customers",
+          "Intellectual property",
+          "Partnerships",
+          "Scalability",
+          "Broader economic/innovation impact"
+        ],
+        "warning": "A business plan alone should not be treated as proof that projected outcomes will occur."
+      },
+      "researchers_and_STEM": {
+        "agent_focus": [
+          "Specific research endeavor",
+          "Importance of problem",
+          "Publications",
+          "Citation quality/context",
+          "Patents",
+          "Funding",
+          "Peer review",
+          "Research adoption",
+          "Government or industry priority",
+          "Independent recognition"
+        ],
+        "warning": "STEM credentials or work in an important technology area do not automatically establish NIW eligibility; analyze the specific endeavor and applicant's positioning."
+      },
+      "physicians": {
+        "note": "Physician NIWs can involve separate statutory/regulatory requirements in certain service contexts. Route to attorney review rather than applying the general knowledge base mechanically."
+      }
+    },
+    "report_output_guidance": {
+      "underlying_eb2_output": [
+        "qualifying_path",
+        "status",
+        "supporting_facts",
+        "information_gaps",
+        "recommended_evidence"
+      ],
+      "prong_output": [
+        "prong_id",
+        "status",
+        "confidence",
+        "supporting_facts",
+        "reasoning_summary",
+        "weaknesses",
+        "information_gaps",
+        "recommended_evidence"
+      ],
+      "overall_output": [
+        "underlying_eb2_status",
+        "prong_1_status",
+        "prong_2_status",
+        "prong_3_status",
+        "overall_profile_rating",
+        "top_strengths",
+        "top_risks",
+        "recommended_next_evidence",
+        "attorney_review_required"
+      ]
+    }
+  },
+  "evaluation_agent_instructions": {
+    "system_behavior": [
+      "Use only facts supplied by the applicant/intake output.",
+      "Never fabricate evidence.",
+      "For preliminary MVP evaluation, applicant-stated affirmative facts may be provisionally assumed true but must be labeled as unverified if supporting evidence has not been supplied.",
+      "Do not reject a criterion solely because a supporting file was not uploaded.",
+      "Do not ask the user follow-up questions during evaluation.",
+      "Record missing facts under information_gaps.",
+      "Record documents that would strengthen the case under recommended_evidence.",
+      "Separate criterion-level threshold analysis from overall merits analysis.",
+      "Do not use raw criterion count as the sole overall score.",
+      "Use plain-English explanations suitable for a prospective client.",
+      "Flag close, unusual, contradictory, or legally sensitive cases for attorney review."
+    ],
+    "recommended_algorithm": [
+      "1. Identify selected visa category.",
+      "2. Extract applicant-stated facts relevant to each legal element.",
+      "3. Evaluate each criterion/prong as strong, potential, weak, not_indicated, or not_applicable.",
+      "4. Assign confidence high/medium/low.",
+      "5. Record why the fact maps to the criterion.",
+      "6. Record missing information without requesting it interactively.",
+      "7. Recommend specific evidence for each viable criterion.",
+      "8. Perform category-specific overall analysis.",
+      "9. Produce top strengths, top risks, and next evidence priorities.",
+      "10. State that attorney review is required."
+    ],
+    "prohibited_conclusions": [
+      "Guaranteed approval",
+      "You definitely qualify",
+      "USCIS will approve",
+      "Three criteria means eligible",
+      "No documents means criterion failed"
+    ],
+    "preferred_language_examples": {
+      "strong": "Based on the information provided, this criterion appears potentially strong for an initial evaluation.",
+      "potential": "This criterion may be applicable, but additional factual detail and supporting evidence would be important.",
+      "weak": "The information is related to this criterion, but it currently appears insufficient to show the full legal standard.",
+      "missing": "No information was provided that clearly maps to this criterion.",
+      "disclaimer": "This is a preliminary AI-assisted profile assessment, not a legal determination. Final eligibility and filing strategy require attorney review."
+    }
+  }
+}

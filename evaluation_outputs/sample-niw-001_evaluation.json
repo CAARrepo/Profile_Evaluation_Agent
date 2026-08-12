@@ -1,0 +1,258 @@
+{
+  "case_id": "sample-niw-001",
+  "visa_category": "EB-2 NIW",
+  "knowledge_base_version": "1.0.0",
+  "overall_profile_rating": "very_strong",
+  "criteria_summary": {
+    "strong": 2,
+    "potential": 2,
+    "weak": 0,
+    "not_indicated": 2,
+    "not_applicable": 0
+  },
+  "criteria": [
+    {
+      "criterion_id": "eb2_ea_academic_record",
+      "criterion_name": "Academic Record Related to Area of Exceptional Ability",
+      "status": "strong",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (publications): Multiple peer-reviewed publications on climate-risk AI",
+        "Applicant states (google_scholar): https://scholar.google.com/citations?user=niw-example",
+        "Education: Ph.D. Environmental Engineering — UC Berkeley"
+      ],
+      "reasoning_summary": "Exceptional-ability regulatory category 'Academic Record Related to Area of Exceptional Ability' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [
+        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb2_ea_ten_years_experience",
+      "criterion_name": "At Least Ten Years of Full-Time Experience",
+      "status": "potential",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (critical_role): Critical role advancing open models adopted by public agencies",
+        "Employment entries in intake: 2"
+      ],
+      "reasoning_summary": "Exceptional-ability regulatory category 'At Least Ten Years of Full-Time Experience' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [
+        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb2_ea_license_certification",
+      "criterion_name": "License or Certification",
+      "status": "not_indicated",
+      "confidence": "medium",
+      "applicant_facts": [],
+      "reasoning_summary": "Exceptional-ability regulatory category 'License or Certification' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [],
+      "weaknesses": [
+        "No applicant facts mapped to this criterion."
+      ],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb2_ea_salary",
+      "criterion_name": "Salary or Remuneration Demonstrating Exceptional Ability",
+      "status": "not_indicated",
+      "confidence": "high",
+      "applicant_facts": [],
+      "reasoning_summary": "Exceptional-ability regulatory category 'Salary or Remuneration Demonstrating Exceptional Ability' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb2_ea_professional_membership",
+      "criterion_name": "Membership in Professional Associations",
+      "status": "potential",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (memberships): Professional association membership in environmental engineering"
+      ],
+      "reasoning_summary": "Exceptional-ability regulatory category 'Membership in Professional Associations' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [
+        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    },
+    {
+      "criterion_id": "eb2_ea_recognition",
+      "criterion_name": "Recognition for Achievements and Significant Contributions",
+      "status": "strong",
+      "confidence": "medium",
+      "applicant_facts": [
+        "Applicant states (awards): National early-career research award in environmental engineering",
+        "Applicant states (media): Covered by national science media for climate-risk modeling work"
+      ],
+      "reasoning_summary": "Exceptional-ability regulatory category 'Recognition for Achievements and Significant Contributions' scored from intake facts for underlying EB-2 analysis support.",
+      "strengths": [
+        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+      ],
+      "weaknesses": [],
+      "information_gaps": [],
+      "recommended_evidence": []
+    }
+  ],
+  "final_merits": null,
+  "underlying_eb2": {
+    "qualifying_path": "eb2_advanced_degree",
+    "status": "strong",
+    "confidence": "medium",
+    "supporting_facts": [
+      "Ph.D. Environmental Engineering — UC Berkeley"
+    ],
+    "information_gaps": [
+      "Five years experience not shown to be progressive.",
+      "Foreign degree equivalency unclear."
+    ],
+    "recommended_evidence": [
+      "Diploma",
+      "Official transcript",
+      "Credential evaluation for foreign degree when appropriate"
+    ],
+    "reasoning_summary": "Intake indicates an advanced-degree-style credential; treated as a preliminary advanced-degree EB-2 path under MVP assumptions."
+  },
+  "niw_prongs": [
+    {
+      "prong_id": "niw_prong_1",
+      "prong_name": "Substantial Merit and National Importance",
+      "status": "strong",
+      "confidence": "medium",
+      "supporting_facts": [
+        "Applicant: Sam Okoye",
+        "Field of endeavor: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Intake summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Employment: Research Scientist at National Lab Partner",
+        "Employment: Postdoctoral Fellow at University Research Center",
+        "Proposed / stated field: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Applicant states (awards): National early-career research award in environmental engineering"
+      ],
+      "reasoning_summary": "The proposed endeavor must have both substantial merit and national importance.. Preliminary view based on stated field/claims only.",
+      "weaknesses": [],
+      "information_gaps": [
+        "Proposed endeavor not clearly defined.",
+        "National importance confused with importance of profession.",
+        "No prospective impact analysis.",
+        "No connection between applicant's activity and claimed national benefit."
+      ],
+      "recommended_evidence": [
+        "Clear statement of proposed endeavor",
+        "Evidence of substantial merit",
+        "Evidence of national importance beyond one employer"
+      ]
+    },
+    {
+      "prong_id": "niw_prong_2",
+      "prong_name": "Well Positioned to Advance the Proposed Endeavor",
+      "status": "strong",
+      "confidence": "medium",
+      "supporting_facts": [
+        "Applicant: Sam Okoye",
+        "Field of endeavor: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Intake summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Employment: Research Scientist at National Lab Partner",
+        "Employment: Postdoctoral Fellow at University Research Center",
+        "Proposed / stated field: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Applicant states (awards): National early-career research award in environmental engineering"
+      ],
+      "reasoning_summary": "Applicant must be well positioned to advance the proposed endeavor; success is not required to be guaranteed.. Education, record, and claimed achievements used as preliminary positioning signals.",
+      "weaknesses": [],
+      "information_gaps": [
+        "Endeavor and past record are disconnected.",
+        "No objective evidence of progress.",
+        "Stakeholder interest not documented.",
+        "Achievements stated without measurable results."
+      ],
+      "recommended_evidence": [
+        "CV/resume",
+        "Degrees and credentials",
+        "Publications and citation evidence",
+        "Patents and implementation evidence",
+        "Past project results",
+        "Awards",
+        "Funding/grants",
+        "Business formation documents"
+      ]
+    },
+    {
+      "prong_id": "niw_prong_3",
+      "prong_name": "On Balance, Beneficial to Waive Job Offer and Labor Certification",
+      "status": "potential",
+      "confidence": "low",
+      "supporting_facts": [
+        "Applicant: Sam Okoye",
+        "Field of endeavor: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Intake summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Employment: Research Scientist at National Lab Partner",
+        "Employment: Postdoctoral Fellow at University Research Center",
+        "Proposed / stated field: Developing open climate-risk AI models for U.S. infrastructure planning",
+        "Summary: Ph.D. researcher advancing nationally important climate-risk modeling tools.",
+        "Applicant states (awards): National early-career research award in environmental engineering"
+      ],
+      "reasoning_summary": "On balance, it must be beneficial to the United States to waive the requirements of a job offer and labor certification.. Intake rarely contains a full Prong-3 waiver theory; status is conservative.",
+      "weaknesses": [
+        "No explicit national-interest waiver argument in intake."
+      ],
+      "information_gaps": [
+        "No waiver-specific argument.",
+        "Benefits described only to applicant.",
+        "No link between applicant's specific profile and U.S. benefit."
+      ],
+      "recommended_evidence": [
+        "Endeavor structure and work plan",
+        "Contracts/engagements with multiple entities",
+        "Entrepreneurial documentation",
+        "Stakeholder letters",
+        "Evidence of specialized expertise",
+        "Evidence of urgency or public/industry need",
+        "Explanation of why labor certification is poorly suited to endeavor"
+      ]
+    }
+  ],
+  "top_strengths": [
+    "Underlying EB-2 (eb2_advanced_degree): strong",
+    "Substantial Merit and National Importance: strong",
+    "Well Positioned to Advance the Proposed Endeavor: strong",
+    "On Balance, Beneficial to Waive Job Offer and Labor Certification: potential"
+  ],
+  "top_risks": [],
+  "recommended_next_evidence": [
+    "Diploma",
+    "Official transcript",
+    "Credential evaluation for foreign degree when appropriate",
+    "Clear statement of proposed endeavor",
+    "Evidence of substantial merit",
+    "Evidence of national importance beyond one employer",
+    "CV/resume",
+    "Degrees and credentials",
+    "Publications and citation evidence",
+    "Patents and implementation evidence"
+  ],
+  "attorney_review_required": true,
+  "disclaimer": "Preliminary AI-assisted profile assessment only. Final eligibility requires attorney review.",
+  "raw_notes": {
+    "all_prongs_required": true,
+    "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
+    "underlying_eb2_status": "strong",
+    "prong_statuses": {
+      "niw_prong_1": "strong",
+      "niw_prong_2": "strong",
+      "niw_prong_3": "potential"
+    }
+  }
+}

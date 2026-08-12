@@ -1,0 +1,145 @@
+{
+  "case_id": "sample-o1a-001",
+  "identity": {
+    "lead_id": "sample-o1a-001",
+    "first_name": "Alex",
+    "last_name": "Rivera",
+    "immigration_category": "O1_VISA",
+    "linkedin_url": "https://www.linkedin.com/in/example/"
+  },
+  "field_of_endeavor": "Artificial Intelligence product leadership",
+  "summary": "AI product leader with national media features and judging experience.",
+  "employment": [
+    {
+      "organization": "Example Labs",
+      "title": "Head of AI Product",
+      "location": "San Francisco",
+      "start_date": "2022",
+      "end_date": "Present",
+      "responsibilities": ["Led AI platform used by enterprise customers"],
+      "source": "resume"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Stanford University",
+      "degree": "M.S. Computer Science",
+      "field": "AI",
+      "dates": "2018",
+      "source": "resume"
+    }
+  ],
+  "criteria": [
+    {
+      "key": "awards",
+      "applicant_answer": "yes",
+      "claim_summary": "National professional society award for excellence in AI product innovation (2024)",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "memberships",
+      "applicant_answer": "yes",
+      "claim_summary": "Invited membership in association requiring outstanding achievements in technology leadership",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "media",
+      "applicant_answer": "yes",
+      "claim_summary": "Featured in Business Insider and IEEE Spectrum articles about AI leadership",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "peer_review",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "judging",
+      "applicant_answer": "yes",
+      "claim_summary": "Invited judge for national startup hackathon evaluating AI submissions",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "patents",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "publications",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "critical_role",
+      "applicant_answer": "yes",
+      "claim_summary": "Critical role leading AI platform strategy at distinguished enterprise SaaS company",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "high_salary",
+      "applicant_answer": "yes",
+      "claim_summary": "",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": ["Applicant answered yes but provided no details"],
+      "notes": ""
+    },
+    {
+      "key": "conferences",
+      "applicant_answer": "yes",
+      "claim_summary": "Invited speaker at national AI product conference",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "google_scholar",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    }
+  ],
+  "claims": [
+    "awards: National professional society award for excellence in AI product innovation (2024)",
+    "media: Featured in Business Insider and IEEE Spectrum"
+  ],
+  "information_gaps": [
+    {
+      "priority": "medium",
+      "topic": "criterion.high_salary",
+      "detail": "Applicant answered yes but provided no details"
+    }
+  ],
+  "readiness": "ready_for_evaluation"
+}

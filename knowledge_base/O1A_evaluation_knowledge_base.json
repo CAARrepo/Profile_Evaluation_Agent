@@ -1,0 +1,590 @@
+{
+  "knowledge_base_metadata": {
+    "title": "O-1A — Individuals of Extraordinary Ability in Sciences, Education, Business, or Athletics Evaluation Knowledge Base",
+    "version": "1.0.0",
+    "generated_date": "2026-08-11",
+    "jurisdictions": [
+      "United States"
+    ],
+    "visa_categories": [
+      "O1A"
+    ],
+    "purpose": "Structured knowledge base for an AI-powered preliminary profile evaluation agent.",
+    "intended_use": [
+      "Map applicant-stated facts to potentially relevant immigration criteria.",
+      "Identify strengths, weaknesses, information gaps, and recommended supporting evidence.",
+      "Produce a preliminary evaluation for later attorney review.",
+      "Avoid blocking evaluation solely because evidence documents are not uploaded during intake."
+    ],
+    "not_intended_use": [
+      "Do not make a binding legal eligibility determination.",
+      "Do not guarantee approval.",
+      "Do not treat criterion-counting alone as sufficient for approval.",
+      "Do not invent facts, evidence, citations, metrics, dates, or achievements.",
+      "Do not replace attorney review."
+    ],
+    "global_evaluation_principles": {
+      "applicant_statement_handling": "For the MVP, when an applicant affirmatively states a fact, the evaluator may assume the statement is true solely for preliminary profile analysis, while clearly distinguishing an unverified applicant statement from documented evidence.",
+      "missing_documents": "Absence of an uploaded document must not automatically convert a stated achievement to 'not met'. Record the document as recommended or missing evidence.",
+      "missing_information": "Do not ask follow-up questions in the Intake Agent. Record missing details and present them in the evaluation report.",
+      "burden_and_standard": "The petitioner or self-petitioner ultimately bears the burden to establish eligibility by the applicable evidentiary standard. The evaluation agent should assess plausibility and evidence strength, not adjudicate.",
+      "no_double_counting_rule": "A single fact may be relevant to more than one analytical issue, but the evaluator should explain the distinct relevance rather than artificially multiplying the same achievement.",
+      "quality_over_quantity": "Multiple weak documents do not necessarily establish a criterion or overall eligibility. Favor independent, objective, specific, verifiable evidence.",
+      "independence": "Independent evidence and recognition generally carry more persuasive value than self-authored descriptions or letters from closely interested parties when the legal issue is external recognition or impact.",
+      "context_matters": "Evaluate achievements relative to the applicant's field, career stage, occupation, geography, industry norms, and the specific legal language of the criterion.",
+      "confidence_scale": {
+        "high": "Applicant's facts clearly map to the criterion and contain meaningful objective details.",
+        "medium": "Potentially relevant facts exist, but important details or corroboration are missing.",
+        "low": "Facts are vague, tangential, or may not satisfy the legal concept without significant additional information."
+      },
+      "criterion_status_scale": {
+        "strong": "Applicant-stated facts appear to align well with the criterion and suggest persuasive evidence could exist.",
+        "potential": "Facts may satisfy the criterion, but key legal or factual elements require clarification or stronger evidence.",
+        "weak": "Some related facts exist, but they currently appear materially below the criterion's requirements.",
+        "not_indicated": "No facts supplied appear to support the criterion.",
+        "not_applicable": "Criterion is generally not suited to the occupation or facts; comparable evidence may be considered where legally allowed."
+      },
+      "overall_profile_scale": {
+        "very_strong": "Multiple strong qualifying areas plus persuasive evidence of sustained acclaim, major impact, or national importance, depending on category.",
+        "strong": "Several meaningful qualifying areas and a coherent overall case, with manageable evidentiary gaps.",
+        "promising": "Some viable criteria/prongs, but significant gaps remain before a strong filing position can be assessed.",
+        "developing": "Profile contains useful achievements but currently lacks breadth, depth, impact, or documentation.",
+        "insufficient_information": "Too little substantive information exists for a meaningful preliminary assessment."
+      }
+    },
+    "primary_sources": [
+      {
+        "name": "8 CFR 214.2(o)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-214/subpart-A/section-214.2",
+        "relevance": "O-1 regulatory definitions, evidentiary criteria, petition requirements, comparable evidence."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 2, Part M, Chapter 4",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-2-part-m-chapter-4",
+        "relevance": "O-1 adjudicative guidance and evaluation of evidence."
+      },
+      {
+        "name": "8 CFR 204.5(h)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-204/subpart-A/section-204.5",
+        "relevance": "EB-1A extraordinary ability criteria."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 6, Part F, Chapter 2",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-6-part-f-chapter-2",
+        "relevance": "EB-1A two-step analysis and final merits guidance."
+      },
+      {
+        "name": "8 CFR 204.5(k)",
+        "type": "regulation",
+        "url": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-204/subpart-A/section-204.5",
+        "relevance": "Underlying EB-2 advanced degree and exceptional ability requirements."
+      },
+      {
+        "name": "USCIS Policy Manual, Volume 6, Part F, Chapter 5",
+        "type": "USCIS policy",
+        "url": "https://www.uscis.gov/policy-manual/volume-6-part-f-chapter-5",
+        "relevance": "EB-2 eligibility and National Interest Waiver guidance."
+      },
+      {
+        "name": "USCIS NIW Policy Update, January 15, 2025",
+        "type": "USCIS policy alert",
+        "url": "https://www.uscis.gov/sites/default/files/document/policy-manual-updates/20250115-Employment-BasedNationalInterestWaivers.pdf",
+        "relevance": "Updated NIW guidance, including eligibility for the underlying EB-2 classification and Dhanasar analysis."
+      }
+    ]
+  },
+  "O1A": {
+    "display_name": "O-1A — Individuals of Extraordinary Ability in Sciences, Education, Business, or Athletics",
+    "classification_type": "temporary nonimmigrant",
+    "statutory_field_scope": [
+      "science",
+      "education",
+      "business",
+      "athletics"
+    ],
+    "important_scope_note": "This O-1A knowledge base does not cover the O-1B arts or motion picture/television standards.",
+    "core_legal_standard": "Extraordinary ability in science, education, business, or athletics means a level of expertise indicating that the person is one of the small percentage who have arisen to the very top of the field of endeavor.",
+    "threshold_structure": {
+      "path_A": "Evidence of receipt of a major, internationally recognized award.",
+      "path_B": "Evidence satisfying at least 3 of the 8 regulatory criteria.",
+      "comparable_evidence": "If the listed criteria do not readily apply to the beneficiary's occupation, comparable evidence may be submitted.",
+      "additional_requirement": "The proposed U.S. work must be in the beneficiary's area of extraordinary ability.",
+      "petitioning_note": "An O-1 beneficiary generally cannot self-petition; a U.S. employer, U.S. agent, or foreign employer through a U.S. agent files the petition."
+    },
+    "evaluation_method": {
+      "step_1": "Determine whether the applicant reports a major internationally recognized award or potentially satisfies at least three regulatory criteria.",
+      "step_2": "For each potentially satisfied criterion, evaluate whether the stated facts actually match every material element of that criterion.",
+      "step_3": "Assess the totality of the record for sustained national or international acclaim and whether the profile indicates the applicant has risen to the very top of the field.",
+      "step_4": "Assess whether the proposed U.S. work is in the same or closely related area of extraordinary ability.",
+      "warning": "Meeting three criteria is a threshold, not an automatic approval determination."
+    },
+    "major_international_award_path": {
+      "criterion_id": "o1a_major_international_award",
+      "name": "Major Internationally Recognized Award",
+      "legal_concept": "Receipt of a major, internationally recognized award, such as a Nobel Prize.",
+      "evaluation_questions": [
+        "Did the applicant personally receive the award?",
+        "Is the award internationally recognized?",
+        "Is it among the most prestigious awards in the field?",
+        "How selective is the award?",
+        "Who is eligible and who selects recipients?",
+        "Is the award for excellence in the applicant's field?"
+      ],
+      "strong_indicators": [
+        "Globally renowned prize with extremely selective recipients.",
+        "Independent authoritative sources establish prestige.",
+        "Award recognizes the applicant personally for field-specific excellence."
+      ],
+      "weak_indicators": [
+        "Participation certificate.",
+        "Internal employer recognition.",
+        "Local or routine competition award.",
+        "Award primarily recognizing an employer, team, or product without proof of the applicant's personal recognition."
+      ],
+      "recommended_evidence": [
+        "Official award certificate or announcement.",
+        "Award organization materials describing selection criteria.",
+        "Recipient statistics.",
+        "Independent press coverage.",
+        "Evidence of the stature of prior recipients."
+      ]
+    },
+    "criteria": [
+      {
+        "criterion_id": "o1a_awards",
+        "number": 1,
+        "name": "Nationally or Internationally Recognized Prizes or Awards",
+        "regulatory_concept": "Receipt of nationally or internationally recognized prizes or awards for excellence in the field of endeavor.",
+        "required_elements": [
+          "Applicant received the prize or award.",
+          "Award is for excellence in the relevant field.",
+          "Award has national or international recognition."
+        ],
+        "evaluation_questions": [
+          "What is the exact award name?",
+          "Who issued it?",
+          "What year was it awarded?",
+          "Was it awarded to the applicant personally?",
+          "What geographic or professional reach does the award have?",
+          "How many candidates and recipients are there?",
+          "What are the eligibility and judging standards?",
+          "Is there independent evidence that the award is recognized?"
+        ],
+        "strong_examples": [
+          "Competitive national professional society award.",
+          "International research, innovation, entrepreneurship, or athletic award with documented selectivity.",
+          "Government or highly recognized industry award for excellence."
+        ],
+        "weak_or_risky_examples": [
+          "Employee of the month.",
+          "Course completion certificate.",
+          "Hackathon participation certificate.",
+          "Pay-to-enter or pay-to-win award with weak selectivity.",
+          "Company award without evidence of broader recognition."
+        ],
+        "recommended_evidence": [
+          "Award certificate.",
+          "Official award webpage.",
+          "Rules and judging criteria.",
+          "Applicant pool and recipient count.",
+          "Independent media coverage.",
+          "Evidence of award issuer's reputation.",
+          "Prior distinguished recipients."
+        ],
+        "common_information_gaps": [
+          "Award prestige is not explained.",
+          "No proof applicant was a recipient.",
+          "No evidence award is national/international.",
+          "No selection criteria.",
+          "No information on competitiveness."
+        ]
+      },
+      {
+        "criterion_id": "o1a_membership",
+        "number": 2,
+        "name": "Membership in Associations Requiring Outstanding Achievements",
+        "regulatory_concept": "Membership in associations in the field that require outstanding achievements of members, judged by recognized national or international experts.",
+        "required_elements": [
+          "Association relates to the field.",
+          "Membership category held by applicant requires outstanding achievements.",
+          "Admission is judged by recognized experts."
+        ],
+        "evaluation_questions": [
+          "What association and membership level?",
+          "Is membership based on achievement rather than fees, education, occupation, or years of service?",
+          "Who evaluates applicants?",
+          "Are evaluators recognized experts?",
+          "What percentage of applicants or members receive this status?"
+        ],
+        "strong_examples": [
+          "Fellow-grade membership awarded after expert review for significant accomplishments.",
+          "Selective academy membership based on distinguished contributions."
+        ],
+        "weak_or_risky_examples": [
+          "Ordinary IEEE/ACM/professional membership available upon payment.",
+          "Alumni association membership.",
+          "Membership based solely on degree, employment, or years in occupation."
+        ],
+        "recommended_evidence": [
+          "Membership certificate.",
+          "Association bylaws.",
+          "Admission requirements.",
+          "Selection committee qualifications.",
+          "Statistics on selectivity.",
+          "Official description of membership grade."
+        ],
+        "common_information_gaps": [
+          "Membership tier unknown.",
+          "No proof outstanding achievements are required.",
+          "No evidence experts judge admission."
+        ]
+      },
+      {
+        "criterion_id": "o1a_published_material",
+        "number": 3,
+        "name": "Published Material About the Applicant",
+        "regulatory_concept": "Published material in professional or major trade publications or major media about the applicant, relating to the applicant's work.",
+        "required_elements": [
+          "Material is about the applicant and their work.",
+          "Publication qualifies as professional, major trade, or major media.",
+          "Required bibliographic context is available."
+        ],
+        "evaluation_questions": [
+          "Is the applicant a meaningful subject of the article?",
+          "What publication published it?",
+          "What is the publication's circulation, audience, reach, or reputation?",
+          "Is the material independent editorial coverage or sponsored/self-published content?",
+          "Does the piece discuss the applicant's work rather than merely list their name?"
+        ],
+        "strong_examples": [
+          "Feature article in major newspaper or respected industry publication.",
+          "Independent media profile discussing applicant's accomplishments.",
+          "Substantive coverage of applicant's work by a major professional outlet."
+        ],
+        "weak_or_risky_examples": [
+          "Applicant-authored article.",
+          "Company bio.",
+          "Press release repost.",
+          "Paid advertorial without independent editorial significance.",
+          "Brief name mention without discussion of the applicant's work."
+        ],
+        "recommended_evidence": [
+          "Full article.",
+          "Title/date/author.",
+          "Translation if needed.",
+          "Publication circulation/reach statistics.",
+          "Media-kit or independent traffic data.",
+          "Evidence article is editorial rather than paid."
+        ],
+        "common_information_gaps": [
+          "Publication stature unknown.",
+          "Article not actually about applicant.",
+          "Only URL or screenshot supplied without publication context.",
+          "Sponsored nature unclear."
+        ]
+      },
+      {
+        "criterion_id": "o1a_judging",
+        "number": 4,
+        "name": "Judging the Work of Others",
+        "regulatory_concept": "Participation on a panel, or individually, as a judge of the work of others in the same or an allied field.",
+        "required_elements": [
+          "Applicant actually participated as a judge.",
+          "Applicant judged work of others.",
+          "Work was in the same or allied field."
+        ],
+        "evaluation_questions": [
+          "What did the applicant judge or review?",
+          "How many reviews or judging assignments were completed?",
+          "For which journal, conference, grant program, competition, award, thesis committee, or organization?",
+          "Was the invitation based on expertise?",
+          "Did the applicant actually complete the review or only receive an invitation?"
+        ],
+        "strong_examples": [
+          "Completed peer review for reputable journals or conferences.",
+          "Grant proposal reviewer.",
+          "Competition or award judge in the field.",
+          "Editorial review activity involving substantive evaluation."
+        ],
+        "weak_or_risky_examples": [
+          "Invitation to review with no evidence of participation.",
+          "Routine management of employees without judging field work.",
+          "Informal mentoring.",
+          "Judging unrelated to applicant's claimed field."
+        ],
+        "recommended_evidence": [
+          "Reviewer invitation emails.",
+          "Completion confirmations.",
+          "Editorial system history.",
+          "Certificates acknowledging completed reviews.",
+          "Public judge-panel listings.",
+          "Letters from editors describing review activity."
+        ],
+        "common_information_gaps": [
+          "Number of completed reviews unknown.",
+          "Publication or conference reputation unknown.",
+          "No distinction between invitation and completed judging.",
+          "Field relationship unclear."
+        ]
+      },
+      {
+        "criterion_id": "o1a_original_contributions",
+        "number": 5,
+        "name": "Original Contributions of Major Significance",
+        "regulatory_concept": "Original scientific, scholarly, or business-related contributions of major significance in the field.",
+        "required_elements": [
+          "Contribution is original.",
+          "Contribution is attributable to applicant.",
+          "Contribution has major significance in the field, not merely to one employer or project."
+        ],
+        "evaluation_questions": [
+          "What exactly did the applicant create, discover, improve, or introduce?",
+          "What was original about it?",
+          "Who has used, adopted, cited, licensed, replicated, or relied upon it?",
+          "What measurable impact resulted?",
+          "Is impact external to the applicant's employer?",
+          "Can independent experts specifically explain significance?"
+        ],
+        "strong_examples": [
+          "Widely adopted technical innovation.",
+          "Influential research with significant citations or downstream use.",
+          "Patent with documented licensing or industry adoption.",
+          "Business methodology or product innovation with major field-wide impact.",
+          "Standard, protocol, open-source technology, or system used broadly."
+        ],
+        "weak_or_risky_examples": [
+          "Merely doing important job duties.",
+          "Patent with no evidence of significance.",
+          "Publication count without evidence of impact.",
+          "Employer praise that does not show field-level importance.",
+          "Project success with no proof applicant made the claimed original contribution."
+        ],
+        "recommended_evidence": [
+          "Patent and licensing records.",
+          "Citation data with field context.",
+          "Independent expert letters with concrete examples.",
+          "Adoption/customer/use metrics.",
+          "Revenue or cost savings attributable to contribution.",
+          "Standards citations.",
+          "Third-party references to applicant's work.",
+          "Technical documentation showing applicant's role."
+        ],
+        "common_information_gaps": [
+          "Originality not described.",
+          "Impact only asserted, not quantified.",
+          "No independent adoption evidence.",
+          "Applicant's personal role unclear.",
+          "Importance shown only within employer rather than field."
+        ]
+      },
+      {
+        "criterion_id": "o1a_scholarly_authorship",
+        "number": 6,
+        "name": "Authorship of Scholarly Articles",
+        "regulatory_concept": "Authorship of scholarly articles in the field, in professional journals or other major media.",
+        "required_elements": [
+          "Applicant is an author.",
+          "Work is scholarly in nature.",
+          "Publication venue is professional journal or other qualifying major media."
+        ],
+        "evaluation_questions": [
+          "How many scholarly articles?",
+          "Which venues?",
+          "Were they peer-reviewed?",
+          "What is the applicant's authorship role?",
+          "What is the publication's reputation?",
+          "What citation or usage impact exists?"
+        ],
+        "strong_examples": [
+          "Peer-reviewed journal papers.",
+          "Scholarly conference proceedings in fields where proceedings are recognized scholarly output.",
+          "Technical scholarly articles in reputable professional publications."
+        ],
+        "weak_or_risky_examples": [
+          "Personal blog posts.",
+          "Marketing articles.",
+          "Internal company documentation.",
+          "Non-scholarly social-media content."
+        ],
+        "recommended_evidence": [
+          "Publication copies.",
+          "DOIs and bibliographic records.",
+          "Journal/conference information.",
+          "Citation profiles.",
+          "Peer-review information.",
+          "Authorship contribution documentation if needed."
+        ],
+        "common_information_gaps": [
+          "Venue quality unknown.",
+          "Articles are not scholarly.",
+          "Authorship not established.",
+          "Citation metrics supplied without context."
+        ]
+      },
+      {
+        "criterion_id": "o1a_critical_essential_role",
+        "number": 7,
+        "name": "Critical or Essential Capacity for Distinguished Organizations",
+        "regulatory_concept": "Employment in a critical or essential capacity for organizations or establishments that have a distinguished reputation.",
+        "required_elements": [
+          "Organization or establishment has distinguished reputation.",
+          "Applicant's role was critical or essential.",
+          "Evidence links applicant's performance to important organizational outcomes."
+        ],
+        "evaluation_questions": [
+          "What organization?",
+          "Why is the organization distinguished?",
+          "What was applicant's exact role?",
+          "Why was the role critical or essential rather than merely valuable?",
+          "What major project, function, revenue stream, research program, product, or operation depended on applicant?",
+          "Can senior or independent evidence explain the applicant's impact?"
+        ],
+        "strong_examples": [
+          "Technical lead for flagship product at distinguished company with evidence of substantial responsibility.",
+          "Principal investigator or key scientist on distinguished research program.",
+          "Executive or specialized leader responsible for mission-critical function."
+        ],
+        "weak_or_risky_examples": [
+          "Working for a famous company without showing critical role.",
+          "Generic job title.",
+          "High performance review without proof of organizational importance.",
+          "Team membership without evidence of individual responsibility."
+        ],
+        "recommended_evidence": [
+          "Detailed employer letters.",
+          "Organizational charts.",
+          "Project documentation.",
+          "Metrics showing applicant's impact.",
+          "Evidence of organization's reputation.",
+          "Press coverage or rankings of organization.",
+          "Awards/funding/market position of organization."
+        ],
+        "common_information_gaps": [
+          "Organization's distinction not documented.",
+          "Applicant's role described generically.",
+          "No measurable outcomes.",
+          "Criticality asserted but not explained."
+        ]
+      },
+      {
+        "criterion_id": "o1a_high_salary",
+        "number": 8,
+        "name": "High Salary or Remuneration",
+        "regulatory_concept": "Applicant has commanded or will command a high salary or other remuneration for services.",
+        "required_elements": [
+          "Reliable compensation evidence.",
+          "Compensation is high in a relevant comparison group."
+        ],
+        "evaluation_questions": [
+          "What is total compensation?",
+          "What component is base salary, bonus, equity, consulting fees, or other remuneration?",
+          "What geography, occupation, level, and year are appropriate comparators?",
+          "Is applicant compensation materially above comparable workers?"
+        ],
+        "strong_examples": [
+          "Compensation in a very high percentile for comparable professionals.",
+          "Highly paid consulting or professional services documented by contracts and reliable benchmarks."
+        ],
+        "weak_or_risky_examples": [
+          "High nominal salary compared with national average but not occupation/geography.",
+          "Unvested speculative equity treated as guaranteed salary.",
+          "Employer statement without payroll, contract, or market comparison."
+        ],
+        "recommended_evidence": [
+          "Pay statements.",
+          "W-2/1099 or tax records where appropriate.",
+          "Employment contract.",
+          "Offer letter.",
+          "Equity/bonus documentation.",
+          "Reliable wage surveys.",
+          "Government wage data.",
+          "Industry compensation studies."
+        ],
+        "common_information_gaps": [
+          "No comparator.",
+          "Wrong geographic comparison.",
+          "Total compensation not separated.",
+          "Salary year/currency unclear."
+        ]
+      }
+    ],
+    "final_merits_factors": [
+      "Sustained national or international acclaim rather than isolated success.",
+      "Recognition from independent experts, institutions, media, customers, or peers.",
+      "Magnitude and influence of accomplishments.",
+      "Selectivity and prestige of awards, memberships, judging invitations, and roles.",
+      "Evidence the applicant is among the small percentage at the very top of the field.",
+      "Consistency of acclaim over time.",
+      "Applicant's individual contribution as distinguished from team or employer accomplishments.",
+      "Relevance of proposed U.S. work to the area of extraordinary ability."
+    ],
+    "report_output_guidance": {
+      "criterion_output_fields": [
+        "criterion_id",
+        "criterion_name",
+        "status",
+        "confidence",
+        "applicant_facts",
+        "why_it_may_apply",
+        "weaknesses",
+        "information_gaps",
+        "recommended_evidence"
+      ],
+      "overall_output_fields": [
+        "threshold_criteria_count",
+        "major_award_path_possible",
+        "overall_profile_rating",
+        "sustained_acclaim_assessment",
+        "top_strengths",
+        "top_risks",
+        "recommended_next_evidence",
+        "attorney_review_required"
+      ]
+    }
+  },
+  "evaluation_agent_instructions": {
+    "system_behavior": [
+      "Use only facts supplied by the applicant/intake output.",
+      "Never fabricate evidence.",
+      "For preliminary MVP evaluation, applicant-stated affirmative facts may be provisionally assumed true but must be labeled as unverified if supporting evidence has not been supplied.",
+      "Do not reject a criterion solely because a supporting file was not uploaded.",
+      "Do not ask the user follow-up questions during evaluation.",
+      "Record missing facts under information_gaps.",
+      "Record documents that would strengthen the case under recommended_evidence.",
+      "Separate criterion-level threshold analysis from overall merits analysis.",
+      "Do not use raw criterion count as the sole overall score.",
+      "Use plain-English explanations suitable for a prospective client.",
+      "Flag close, unusual, contradictory, or legally sensitive cases for attorney review."
+    ],
+    "recommended_algorithm": [
+      "1. Identify selected visa category.",
+      "2. Extract applicant-stated facts relevant to each legal element.",
+      "3. Evaluate each criterion/prong as strong, potential, weak, not_indicated, or not_applicable.",
+      "4. Assign confidence high/medium/low.",
+      "5. Record why the fact maps to the criterion.",
+      "6. Record missing information without requesting it interactively.",
+      "7. Recommend specific evidence for each viable criterion.",
+      "8. Perform category-specific overall analysis.",
+      "9. Produce top strengths, top risks, and next evidence priorities.",
+      "10. State that attorney review is required."
+    ],
+    "prohibited_conclusions": [
+      "Guaranteed approval",
+      "You definitely qualify",
+      "USCIS will approve",
+      "Three criteria means eligible",
+      "No documents means criterion failed"
+    ],
+    "preferred_language_examples": {
+      "strong": "Based on the information provided, this criterion appears potentially strong for an initial evaluation.",
+      "potential": "This criterion may be applicable, but additional factual detail and supporting evidence would be important.",
+      "weak": "The information is related to this criterion, but it currently appears insufficient to show the full legal standard.",
+      "missing": "No information was provided that clearly maps to this criterion.",
+      "disclaimer": "This is a preliminary AI-assisted profile assessment, not a legal determination. Final eligibility and filing strategy require attorney review."
+    }
+  }
+}

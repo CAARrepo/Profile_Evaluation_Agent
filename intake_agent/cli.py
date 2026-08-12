@@ -1,4 +1,4 @@
-"""CLI for running the O-1 Intake Agent on exported Supabase data."""
+"""CLI for running the O-1A Intake Agent on exported Supabase data."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ console = Console()
 
 def cmd_list_o1(_: argparse.Namespace) -> int:
     questionnaires = load_questionnaires()
-    table = Table(title="O-1 Leads")
+    table = Table(title="O-1A Leads")
     table.add_column("lead_id", style="cyan")
     table.add_column("name")
     table.add_column("status")
@@ -46,7 +46,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not lead_id:
         lead_id = pick_sample_o1_lead(prefer_completed=True, require_docs=not args.allow_no_docs)
         if not lead_id:
-            console.print("[red]No suitable O-1 lead found.[/red]")
+            console.print("[red]No suitable O-1A lead found.[/red]")
             return 1
         console.print(f"[yellow]Auto-selected lead:[/yellow] {lead_id}")
 
@@ -61,16 +61,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     console.print(f"Readiness: [bold]{profile.get('readiness')}[/bold]")
     console.print(f"Summary: {profile.get('summary')}")
     console.print(f"Claims: {len(profile.get('claims') or [])}")
-    console.print(f"Missing info requests: {len(profile.get('missing_information') or [])}")
+    console.print(f"Information gaps: {len(profile.get('information_gaps') or [])}")
     console.print(f"Conflicts: {len(profile.get('conflicts') or [])}")
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="O-1 Intake Agent (local Ollama)")
+    p = argparse.ArgumentParser(description="O-1A Intake Agent (local Ollama)")
     sub = p.add_subparsers(dest="command", required=True)
 
-    list_p = sub.add_parser("list-o1", help="List O-1 leads from User_Info.csv")
+    list_p = sub.add_parser("list-o1", help="List O-1A leads from User_Info.csv")
     list_p.set_defaults(func=cmd_list_o1)
 
     run_p = sub.add_parser("run", help="Run intake for one lead")

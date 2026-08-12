@@ -42,6 +42,7 @@ def load_questionnaires(path: Path = QUESTIONNAIRE_CSV) -> dict[str, dict[str, A
 
 
 def list_o1_leads(path: Path = USER_INFO_CSV) -> list[dict[str, str]]:
+    """Leads tagged O1_VISA in export data (evaluated as O-1A in this pipeline)."""
     return [r for r in load_leads(path) if (r.get("immigration_category") or "").upper() == "O1_VISA"]
 
 
@@ -120,7 +121,7 @@ def pick_sample_o1_lead(
     prefer_completed: bool = True,
     require_docs: bool = True,
 ) -> Optional[str]:
-    """Choose a good O-1 lead for local testing."""
+    """Choose a good O-1A lead for local testing."""
     questionnaires = load_questionnaires()
     for lead in list_o1_leads():
         lead_id = lead["id"]
@@ -131,7 +132,7 @@ def pick_sample_o1_lead(
         if require_docs and not collect_lead_documents(lead_id):
             continue
         return lead_id
-    # Fallback: any O-1 with questionnaire
+    # Fallback: any O-1A lead with questionnaire
     for lead in list_o1_leads():
         if lead["id"] in questionnaires:
             if require_docs and not collect_lead_documents(lead["id"]):

@@ -1,0 +1,134 @@
+{
+  "case_id": "sample-eb1a-001",
+  "identity": {
+    "lead_id": "sample-eb1a-001",
+    "first_name": "Priya",
+    "last_name": "Nair",
+    "immigration_category": "EB1A"
+  },
+  "field_of_endeavor": "Machine learning research",
+  "summary": "ML researcher with scholarly articles, peer review, and original contributions.",
+  "employment": [
+    {
+      "organization": "Research Institute",
+      "title": "Senior Research Scientist",
+      "responsibilities": ["Led NLP research group"],
+      "source": "resume"
+    }
+  ],
+  "education": [
+    {
+      "institution": "MIT",
+      "degree": "Ph.D. Computer Science",
+      "field": "Machine Learning",
+      "source": "resume"
+    }
+  ],
+  "criteria": [
+    {
+      "key": "awards",
+      "applicant_answer": "yes",
+      "claim_summary": "Best paper award at a major international ML conference",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "memberships",
+      "applicant_answer": "yes",
+      "claim_summary": "IEEE Senior Member selected for outstanding achievements",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "media",
+      "applicant_answer": "no",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "peer_review",
+      "applicant_answer": "yes",
+      "claim_summary": "Regular peer reviewer for NeurIPS and ICML",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "judging",
+      "applicant_answer": "yes",
+      "claim_summary": "Program committee member judging ML conference submissions",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "patents",
+      "applicant_answer": "yes",
+      "claim_summary": "Granted U.S. patent on neural ranking methods with demonstrated industry adoption",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "publications",
+      "applicant_answer": "yes",
+      "claim_summary": "Authored 12 scholarly articles in peer-reviewed ML venues with citations",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "critical_role",
+      "applicant_answer": "yes",
+      "claim_summary": "Leading role directing ML research team at distinguished research institute",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "high_salary",
+      "applicant_answer": "not_sure",
+      "claim_summary": "",
+      "evidence_status": "missing",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "conferences",
+      "applicant_answer": "yes",
+      "claim_summary": "Invited talks at international ML workshops",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    },
+    {
+      "key": "google_scholar",
+      "applicant_answer": "yes",
+      "claim_summary": "https://scholar.google.com/citations?user=example",
+      "evidence_status": "claim_only",
+      "evidence_items": [],
+      "gaps": [],
+      "notes": ""
+    }
+  ],
+  "claims": [
+    "publications: Authored 12 scholarly articles in peer-reviewed ML venues with citations",
+    "judging: Program committee member judging ML conference submissions"
+  ],
+  "information_gaps": [],
+  "readiness": "ready_for_evaluation"
+}
