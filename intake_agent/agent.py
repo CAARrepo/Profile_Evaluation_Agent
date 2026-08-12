@@ -25,6 +25,7 @@ from .schema import (
     O1CriterionKey,
     StandardizedProfile,
 )
+from .url_fetch import collect_applicant_urls, fetch_applicant_urls
 
 
 CRITERION_FIELD_MAP = {
@@ -44,6 +45,52 @@ CRITERION_FIELD_MAP = {
     "googleScholar": O1CriterionKey.GOOGLE_SCHOLAR,
     "google_scholar": O1CriterionKey.GOOGLE_SCHOLAR,
 }
+
+_URL_SOURCE_TO_CRITERION = {
+    "google_scholar": O1CriterionKey.GOOGLE_SCHOLAR,
+    "media": O1CriterionKey.MEDIA,
+}
+
+
+def enrich_bundle_with_urls(bundle: CaseBundle) -> CaseBundle:
+    """Fetch applicant-provided URLs best-effort; never raise."""
+    try:
+        identity = seed_identity(bundle)
+        urls = collect_applicant_urls(
+            questionnaire=bundle.questionnaire,
+            identity_urls=[identity.linkedin_url, identity.google_scholar_url],
+        )
+        pages, failed = fetch_applicant_urls(urls)
+        bundle.url_texts = pages
+        bundle.url_fetch_failures = failed
+    except Exception:  # noqa: BLE001 - URL enrichment must never block intake
+        bundle.url_texts = []
+        bundle.url_fetch_failures = []
+    return bundle
+
+
+def _attach_url_evidence(criteria: list[CriterionIntake], pages: list[dict[str, str]]) -> None:
+    by_key = {c.key: c for c in criteria}
+    for page in pages:
+        source = page.get("source") or "url"
+        url = page.get("url") or ""
+        excerpt = (page.get("text") or "")[:800]
+        title = (page.get("title") or "").strip()
+        item = EvidenceItem(
+            source=source,
+            reference=url,
+            excerpt=(f"{title}: {excerpt}" if title else excerpt)[:800],
+        )
+        criterion_key = _URL_SOURCE_TO_CRITERION.get(source)
+        if criterion_key and criterion_key in by_key:
+            c = by_key[criterion_key]
+            c.evidence_items.append(item)
+            if c.evidence_status == EvidenceStatus.MISSING:
+                c.evidence_status = EvidenceStatus.PARTIALLY_SUPPORTED
+            if not c.claim_summary and title:
+                c.claim_summary = f"Fetched page: {title}"[:500]
+            if not c.notes:
+                c.notes = "Content retrieved from applicant-provided URL (best-effort)"
 
 
 def _answers(bundle: CaseBundle) -> dict[str, Any]:
@@ -191,6 +238,14 @@ def deterministic_information_gaps(
                 detail="LinkedIn URL not provided.",
             )
         )
+    for failed_url in bundle.url_fetch_failures:
+        gaps.append(
+            InformationGap(
+                priority="low",
+                topic="url_fetch",
+                detail=f"Could not retrieve applicant-provided URL (blocked, empty, or error): {failed_url}",
+            )
+        )
     if identity.us_job_offer in {"", "unknown"} and not identity.self_employment_planned:
         gaps.append(
             InformationGap(
@@ -229,7 +284,18 @@ def merge_profiles(
     # Keep authoritative identity from CSV/questionnaire
     llm_profile.case_id = seeded.case_id
     llm_profile.identity = seeded.identity
-    llm_profile.documents_processed = seeded.documents_processed
+    llm_profile.documents_processed = seeded.documents_processed or llm_profile.documents_processed
+
+    # Prefer seeded evidence index when LLM omits URL/document refs
+    if not llm_profile.evidence_index:
+        llm_profile.evidence_index = seeded.evidence_index
+    else:
+        seen_refs = {(e.source, e.reference) for e in llm_profile.evidence_index}
+        for e in seeded.evidence_index:
+            key = (e.source, e.reference)
+            if key not in seen_refs:
+                llm_profile.evidence_index.append(e)
+                seen_refs.add(key)
 
     # If LLM omitted criteria, keep seeded criteria
     if not llm_profile.criteria:
@@ -291,8 +357,10 @@ class IntakeAgent:
     def build_seed_profile(self, bundle: CaseBundle) -> StandardizedProfile:
         identity = seed_identity(bundle)
         criteria = seed_criteria_from_questionnaire(bundle)
+        _attach_url_evidence(criteria, bundle.url_texts)
         info_gaps = deterministic_information_gaps(bundle, identity, criteria)
         docs = [d.get("filename") or d.get("path") or "" for d in bundle.document_texts]
+        url_refs = [f"url:{(p.get('url') or '')}" for p in bundle.url_texts if p.get("url")]
 
         claims: list[str] = []
         for c in criteria:
@@ -300,15 +368,37 @@ class IntakeAgent:
                 claims.append(f"{c.key.value}: {c.claim_summary}")
             elif c.applicant_answer == "yes":
                 claims.append(f"{c.key.value}: (yes — no details provided)")
+        for page in bundle.url_texts:
+            url = page.get("url") or ""
+            title = (page.get("title") or "").strip()
+            excerpt = (page.get("text") or "")[:400]
+            label = title or url
+            if excerpt:
+                claims.append(f"Fetched URL ({label}): {excerpt}")
 
         name = f"{identity.first_name} {identity.last_name}".strip()
         summary = (
             f"O-1A intake for {name or identity.lead_id}. "
             f"Status={identity.current_status or 'unknown'}; "
             f"docs={len(docs)}; "
+            f"fetched_urls={len(bundle.url_texts)}; "
             f"positive/unsure criteria="
             f"{sum(1 for c in criteria if c.applicant_answer in {'yes', 'not_sure'})}."
         )
+
+        evidence_index = [
+            EvidenceItem(source="document", reference=d, excerpt="")
+            for d in docs
+            if d
+        ]
+        for page in bundle.url_texts:
+            evidence_index.append(
+                EvidenceItem(
+                    source=page.get("source") or "url",
+                    reference=page.get("url") or "",
+                    excerpt=(page.get("text") or "")[:800],
+                )
+            )
 
         return StandardizedProfile(
             case_id=identity.lead_id,
@@ -316,19 +406,16 @@ class IntakeAgent:
             summary=summary,
             criteria=criteria,
             claims=claims,
-            evidence_index=[
-                EvidenceItem(source="document", reference=d, excerpt="")
-                for d in docs
-                if d
-            ],
+            evidence_index=evidence_index,
             information_gaps=info_gaps,
             missing_information=[],  # MVP: no applicant follow-ups
-            documents_processed=docs,
+            documents_processed=docs + url_refs,
             readiness="ready_for_evaluation",
         )
 
     def run(self, lead_id: str) -> StandardizedProfile:
         bundle = load_case(lead_id, max_doc_chars=MAX_DOCUMENT_CHARS)
+        enrich_bundle_with_urls(bundle)
         seeded = self.build_seed_profile(bundle)
 
         if not self.use_llm:

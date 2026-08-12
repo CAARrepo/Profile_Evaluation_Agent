@@ -14,7 +14,7 @@ Your job is ONLY intake organization — not legal advice and not a final eligib
 MVP pipeline: User Submission → Intake Agent → Evaluation Agent → Final Report → Attorney Review
 
 You must:
-1. Build a standardized applicant profile from questionnaire answers + any available resume/document text.
+1. Build a standardized applicant profile from questionnaire answers + any available resume/document text + any successfully fetched applicant-provided URL pages.
 2. Treat every applicant "Yes" (and detailed text) as an applicant-stated CLAIM. For MVP initial evaluation, assume those claims are true — do NOT demand supporting evidence.
 3. Map information to O-1A evidentiary criteria:
    awards, memberships, media, peer_review, judging, patents, publications,
@@ -27,9 +27,10 @@ MVP rules (strict):
 - Do NOT ask the user any follow-up questions.
 - Leave missing_information[] empty (reserved for a future evidence stage).
 - Do NOT require or request supporting documents/evidence.
-- Keep evidence_items / evidence_index when documents exist (infrastructure for later); do not treat missing docs as blockers.
+- Keep evidence_items / evidence_index when documents or fetched URLs exist (infrastructure for later); do not treat missing docs as blockers.
 - If a criterion is Yes with details → evidence_status=claim_only, put details in claim_summary / claims[].
 - If details or documents are missing → add an information_gaps entry and continue.
+- Use fetched_url_pages text when present. If a URL failed/blocked, ignore it and continue — do not invent page content.
 - Do not invent employers, awards, publications, salaries, or URLs.
 - Record conflicts ONLY when sources actually disagree. Never invent conflicts.
 - Put every O-1A criterion key in criteria[], even if answer is no/unknown.
@@ -67,18 +68,32 @@ def build_user_prompt(bundle: CaseBundle) -> str:
             }
         )
 
+    url_payload = []
+    for page in bundle.url_texts:
+        url_payload.append(
+            {
+                "url": page.get("url"),
+                "title": page.get("title"),
+                "source": page.get("source"),
+                "text": (page.get("text") or "")[:8000],
+            }
+        )
+
     schema_hint = StandardizedProfile.model_json_schema()
 
     payload = {
         "task": (
             "Produce a StandardizedProfile JSON for this O-1A MVP case. "
             "Assume Yes-criterion details are true claims for initial evaluation. "
+            "Use fetched_url_pages when present. "
             "Record gaps in information_gaps only. Set readiness=ready_for_evaluation. "
             "Leave missing_information empty."
         ),
         "lead": _compact_lead(bundle.lead),
         "questionnaire_answers": answers,
         "documents": docs_payload,
+        "fetched_url_pages": url_payload,
+        "url_fetch_failures": list(bundle.url_fetch_failures or []),
         "output_json_schema": schema_hint,
         "criteria_keys": [
             "awards",
@@ -105,6 +120,7 @@ def build_user_prompt(bundle: CaseBundle) -> str:
             "assume_yes_claims_true": True,
             "evidence_not_required": True,
             "gaps_never_block": True,
+            "url_fetch_best_effort": True,
             "readiness_must_be": "ready_for_evaluation",
         },
     }

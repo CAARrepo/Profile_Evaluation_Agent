@@ -21,3 +21,14 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b-instruct")
 # Truncate very long resume text so the prompt fits local context
 MAX_DOCUMENT_CHARS = int(os.environ.get("INTAKE_MAX_DOC_CHARS", "14000"))
 MAX_QUESTIONNAIRE_CHARS = int(os.environ.get("INTAKE_MAX_Q_CHARS", "12000"))
+
+# Best-effort fetch of applicant-provided URLs (LinkedIn/Scholar/media/etc.)
+URL_FETCH_ENABLED = os.environ.get("INTAKE_URL_FETCH", "1").strip().lower() not in {
+    "0",
+    "false",
+    "no",
+    "off",
+}
+URL_FETCH_TIMEOUT = float(os.environ.get("INTAKE_URL_FETCH_TIMEOUT", "12"))
+URL_FETCH_MAX_CHARS = int(os.environ.get("INTAKE_URL_FETCH_MAX_CHARS", "8000"))
+URL_FETCH_MAX_URLS = int(os.environ.get("INTAKE_URL_FETCH_MAX_URLS", "15"))

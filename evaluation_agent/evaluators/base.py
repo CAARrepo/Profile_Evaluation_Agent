@@ -93,6 +93,16 @@ class BaseEvaluator(ABC):
         for claim in intake.get("claims") or []:
             if claim:
                 facts.append(f"Claim: {claim}")
+        for ev in intake.get("evidence_index") or []:
+            if not isinstance(ev, dict):
+                continue
+            source = str(ev.get("source") or "")
+            if source not in {"url", "linkedin", "google_scholar", "media"}:
+                continue
+            excerpt = (ev.get("excerpt") or "").strip()
+            ref = (ev.get("reference") or "").strip()
+            if excerpt:
+                facts.append(f"Fetched {source} ({ref}): {excerpt[:350]}")
         return facts
 
     def llm_evaluate_criterion(

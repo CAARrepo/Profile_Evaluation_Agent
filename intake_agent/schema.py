@@ -151,3 +151,11 @@ class CaseBundle(BaseModel):
     lead: dict[str, Any]
     questionnaire: Optional[dict[str, Any]] = None
     document_texts: list[dict[str, str]] = Field(default_factory=list)
+    url_texts: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="Best-effort fetched pages from applicant-provided URLs",
+    )
+    url_fetch_failures: list[str] = Field(
+        default_factory=list,
+        description="URLs that could not be retrieved (blocked/empty/error)",
+    )

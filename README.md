@@ -78,23 +78,26 @@ Output: `evaluation_outputs/<lead_id>_evaluation.json`
 
 ## Report Agent (initial user report)
 
-Turns Evaluation JSON into a **user-facing initial report** (Markdown + JSON).
+Turns Evaluation JSON into:
+- internal Markdown + JSON
+- polished client-facing PDF: `report_outputs/<case_id>_initial_profile_evaluation.pdf`
 
-- Does **not** re-score the case
-- **`attorney_reviewed: false`** — safe to send as a preliminary assessment
-- Includes strengths, gaps, recommended evidence, and a clear disclaimer
+- Does **not** re-score or reclassify the case
+- **`attorney_reviewed: false`**
+- Client-friendly status labels; no mid-sentence truncation
 
 ```bash
 # After evaluation exists:
 python -m report_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136
 
 # Or from an evaluation file:
-python -m report_agent run --evaluation-file evaluation_outputs/00b14135-8fa0-4525-a88d-21605f615136_evaluation.json
+python -m report_agent run --evaluation-file evaluation_outputs/<id>_evaluation.json
 ```
 
 Output:
 - `report_outputs/<lead_id>_initial_report.md`
 - `report_outputs/<lead_id>_initial_report.json`
+- `report_outputs/<lead_id>_initial_profile_evaluation.pdf`
 
 ## Tests
 

@@ -1,0 +1,357 @@
+"""Polished client-facing PDF generator (ReportLab)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+from reportlab.lib.pagesizes import LETTER
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    HRFlowable,
+    ListFlowable,
+    ListItem,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from .schema import ClientReportContent
+from .text_utils import fix_mojibake
+
+_NAVY = colors.Color(0.10, 0.18, 0.32)
+_SLATE = colors.Color(0.25, 0.30, 0.36)
+_RULE = colors.Color(0.75, 0.78, 0.82)
+_ROW_ALT = colors.Color(0.96, 0.97, 0.98)
+
+
+def _register_fonts() -> tuple[str, str]:
+    """Register Windows / common TTF fonts with Unicode support."""
+    candidates = [
+        (
+            Path(r"C:\Windows\Fonts\arial.ttf"),
+            Path(r"C:\Windows\Fonts\arialbd.ttf"),
+            "ReportArial",
+            "ReportArial-Bold",
+        ),
+        (
+            Path(r"C:\Windows\Fonts\calibri.ttf"),
+            Path(r"C:\Windows\Fonts\calibrib.ttf"),
+            "ReportCalibri",
+            "ReportCalibri-Bold",
+        ),
+        (
+            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+            "ReportDejaVu",
+            "ReportDejaVu-Bold",
+        ),
+    ]
+    for regular, bold, rname, bname in candidates:
+        if regular.is_file() and bold.is_file():
+            if rname not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(rname, str(regular)))
+                pdfmetrics.registerFont(TTFont(bname, str(bold)))
+            return rname, bname
+    # Fallback to Helvetica (limited Unicode; still better than crashing)
+    return "Helvetica", "Helvetica-Bold"
+
+
+def _p(text: str, style: ParagraphStyle) -> Paragraph:
+    # Escape HTML so raw tags never appear; use ParagraphStyle for emphasis.
+    safe = (
+        fix_mojibake(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return Paragraph(safe, style)
+
+
+def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
+    base = getSampleStyleSheet()
+    return {
+        "title": ParagraphStyle(
+            "ReportTitle",
+            parent=base["Title"],
+            fontName=font_bold,
+            fontSize=18,
+            leading=22,
+            textColor=_NAVY,
+            alignment=TA_CENTER,
+            spaceAfter=6,
+        ),
+        "subtitle": ParagraphStyle(
+            "ReportSubtitle",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=10,
+            leading=13,
+            textColor=_SLATE,
+            alignment=TA_CENTER,
+            spaceAfter=4,
+        ),
+        "h1": ParagraphStyle(
+            "ReportH1",
+            parent=base["Heading2"],
+            fontName=font_bold,
+            fontSize=12,
+            leading=15,
+            textColor=_NAVY,
+            spaceBefore=12,
+            spaceAfter=6,
+        ),
+        "body": ParagraphStyle(
+            "ReportBody",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=9.5,
+            leading=13,
+            textColor=colors.black,
+            alignment=TA_JUSTIFY,
+            spaceAfter=6,
+        ),
+        "bullet": ParagraphStyle(
+            "ReportBullet",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=9.5,
+            leading=12.5,
+            textColor=colors.black,
+            leftIndent=4,
+        ),
+        "table_header": ParagraphStyle(
+            "ReportTH",
+            parent=base["Normal"],
+            fontName=font_bold,
+            fontSize=8,
+            leading=10,
+            textColor=colors.white,
+        ),
+        "table_cell": ParagraphStyle(
+            "ReportTD",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=8,
+            leading=10.5,
+            textColor=colors.black,
+        ),
+        "footer": ParagraphStyle(
+            "ReportFooter",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=7.5,
+            leading=9,
+            textColor=_SLATE,
+            alignment=TA_CENTER,
+        ),
+        "meta": ParagraphStyle(
+            "ReportMeta",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=9.5,
+            leading=12,
+            textColor=_SLATE,
+            alignment=TA_LEFT,
+            spaceAfter=2,
+        ),
+        "section_label": ParagraphStyle(
+            "ReportSectionLabel",
+            parent=base["Normal"],
+            fontName=font_bold,
+            fontSize=9.5,
+            leading=12.5,
+            textColor=_NAVY,
+            alignment=TA_LEFT,
+            spaceBefore=4,
+            spaceAfter=4,
+        ),
+    }
+
+
+def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    font, font_bold = _register_fonts()
+    styles = _styles(font, font_bold)
+
+    def _on_page(canvas, doc) -> None:  # noqa: ANN001
+        canvas.saveState()
+        canvas.setStrokeColor(_RULE)
+        canvas.setLineWidth(0.5)
+        y = 0.55 * inch
+        canvas.line(0.75 * inch, y + 12, LETTER[0] - 0.75 * inch, y + 12)
+        canvas.setFont(font, 7.5)
+        canvas.setFillColor(_SLATE)
+        canvas.drawRightString(LETTER[0] - 0.75 * inch, y, f"Page {doc.page}")
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(
+        str(output_path),
+        pagesize=LETTER,
+        leftMargin=0.75 * inch,
+        rightMargin=0.75 * inch,
+        topMargin=0.7 * inch,
+        bottomMargin=0.85 * inch,
+        title=content.document_title,
+        author="Profile Evaluation Agent",
+    )
+
+    story: list = []
+    story.append(_p(content.document_title, styles["title"]))
+    story.append(HRFlowable(width="100%", thickness=1, color=_NAVY, spaceAfter=8))
+    story.append(_p(f"Applicant: {content.applicant_name}", styles["meta"]))
+    story.append(_p(f"Assessment date: {content.assessment_date}", styles["meta"]))
+    story.append(_p(f"Visa category: {content.visa_category}", styles["meta"]))
+    if content.case_id:
+        story.append(_p(f"Case reference: {content.case_id}", styles["meta"]))
+    story.append(Spacer(1, 6))
+
+    story.append(_p("1. Important Preliminary Disclaimer", styles["h1"]))
+    story.append(_p(content.disclaimer, styles["body"]))
+
+    story.append(_p("2. Executive Summary", styles["h1"]))
+    for para in content.overall_assessment_paragraphs:
+        story.append(_p(para, styles["body"]))
+
+    story.append(_p("3. Assessment Snapshot", styles["h1"]))
+    snap = content.snapshot
+    snap_data = [
+        [
+            _p("Strong", styles["table_header"]),
+            _p("Potential", styles["table_header"]),
+            _p("Weak", styles["table_header"]),
+            _p("Not indicated", styles["table_header"]),
+        ],
+        [
+            _p(str(snap.get("strong", 0)), styles["table_cell"]),
+            _p(str(snap.get("potential", 0)), styles["table_cell"]),
+            _p(str(snap.get("weak", 0)), styles["table_cell"]),
+            _p(str(snap.get("not_indicated", 0)), styles["table_cell"]),
+        ],
+    ]
+    snap_table = Table(snap_data, colWidths=[1.6 * inch, 1.6 * inch, 1.6 * inch, 1.7 * inch])
+    snap_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
+                ("BACKGROUND", (0, 1), (-1, 1), _ROW_ALT),
+                ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
+                ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
+    story.append(snap_table)
+    story.append(Spacer(1, 8))
+
+    story.append(_p("4. Criterion-by-Criterion Overview", styles["h1"]))
+    story.append(
+        _p(
+            "Statuses below are preliminary labels for discussion only. "
+            "They do not mean a criterion has been legally satisfied.",
+            styles["body"],
+        )
+    )
+
+    header = [
+        _p("Criterion", styles["table_header"]),
+        _p("Preliminary status", styles["table_header"]),
+        _p("Explanation", styles["table_header"]),
+        _p("Priority evidence", styles["table_header"]),
+    ]
+    table_data = [header]
+    for i, row in enumerate(content.criterion_rows):
+        evidence = ", ".join(row.top_evidence[:5]) if row.top_evidence else "—"
+        table_data.append(
+            [
+                _p(row.criterion_name, styles["table_cell"]),
+                _p(row.client_status_label, styles["table_cell"]),
+                _p(row.explanation or "—", styles["table_cell"]),
+                _p(evidence, styles["table_cell"]),
+            ]
+        )
+
+    col_widths = [1.45 * inch, 1.55 * inch, 2.35 * inch, 1.55 * inch]
+    crit_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    style_cmds = [
+        ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
+        ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
+        ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]
+    for i in range(1, len(table_data)):
+        if i % 2 == 0:
+            style_cmds.append(("BACKGROUND", (0, i), (-1, i), _ROW_ALT))
+    crit_table.setStyle(TableStyle(style_cmds))
+    story.append(crit_table)
+
+    story.append(_p("5. Priority Opportunities", styles["h1"]))
+    if content.priority_opportunities:
+        story.append(
+            ListFlowable(
+                [
+                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                    for item in content.priority_opportunities
+                ],
+                bulletType="bullet",
+                start="•",
+            )
+        )
+    else:
+        story.append(_p("No priority opportunities were identified from the current record.", styles["body"]))
+
+    story.append(_p("6. Priority Evidence Checklist", styles["h1"]))
+    if content.information_still_needed:
+        story.append(_p("Information still needed", styles["section_label"]))
+        story.append(
+            ListFlowable(
+                [
+                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                    for item in content.information_still_needed
+                ],
+                bulletType="bullet",
+                start="•",
+            )
+        )
+    if content.priority_evidence_checklist:
+        story.append(_p("Recommended supporting materials", styles["section_label"]))
+        story.append(
+            ListFlowable(
+                [
+                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                    for item in content.priority_evidence_checklist
+                ],
+                bulletType="bullet",
+                start="•",
+            )
+        )
+    if not content.information_still_needed and not content.priority_evidence_checklist:
+        story.append(
+            _p(
+                "Continue collecting independent, verifiable documents for the strongest opportunities above.",
+                styles["body"],
+            )
+        )
+
+    story.append(_p("7. Recommended Next Steps", styles["h1"]))
+    for idx, step in enumerate(content.recommended_next_steps, start=1):
+        story.append(_p(f"{idx}. {step}", styles["body"]))
+
+    doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
+    return output_path

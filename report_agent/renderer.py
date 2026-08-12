@@ -1,25 +1,23 @@
-"""Render Evaluation JSON into an initial user-facing Markdown report."""
+"""Render Evaluation JSON into internal Markdown + client presentation content."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from .client_content import build_client_content
 from .config import DEFAULT_DISCLAIMER, RATING_PLAIN
-from .schema import InitialReport
+from .schema import ClientReportContent, InitialReport
+from .text_utils import (
+    client_status_label,
+    consolidate_evidence,
+    explain_overall_rating,
+    fix_mojibake,
+)
 
 
 def _unique(items: list[str], limit: int = 12) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for item in items:
-        text = (item or "").strip()
-        if text and text not in seen:
-            seen.add(text)
-            out.append(text)
-        if len(out) >= limit:
-            break
-    return out
+    return consolidate_evidence(items, limit=limit)
 
 
 def applicant_name_from_intake(intake: Optional[dict[str, Any]]) -> str:
@@ -40,14 +38,16 @@ def build_report_model(
     rating = str(evaluation.get("overall_profile_rating") or "insufficient_information")
     category = str(evaluation.get("visa_category") or "")
     name = applicant_name_from_intake(intake)
+    summary_counts = evaluation.get("criteria_summary") or {}
 
     criteria = evaluation.get("criteria") or []
     overview = [
         {
             "criterion_id": c.get("criterion_id"),
             "criterion_name": c.get("criterion_name"),
-            "status": c.get("status"),
+            "status": c.get("status"),  # preserve internal status
             "confidence": c.get("confidence"),
+            "client_status_label": client_status_label(str(c.get("status") or "")),
         }
         for c in criteria
         if isinstance(c, dict)
@@ -101,12 +101,12 @@ def build_report_model(
             for g in p.get("information_gaps") or []:
                 gaps.append(f"{p.get('prong_name')}: {g}")
 
-    summary = (
-        f"Based on your submitted profile information, your preliminary "
-        f"{category} assessment is rated **{RATING_PLAIN.get(rating, rating)}**. "
-        f"This initial report summarizes strengths, areas to strengthen, and "
-        f"recommended supporting materials. It has not been reviewed by an attorney."
+    overall_paras = explain_overall_rating(
+        visa_category=category,
+        overall_rating=rating,
+        criteria_summary=summary_counts,
     )
+    summary = " ".join(overall_paras[:2])
 
     return InitialReport(
         case_id=case_id,
@@ -117,7 +117,8 @@ def build_report_model(
         attorney_reviewed=False,
         attorney_review_required_later=True,
         generated_from_evaluation=evaluation_path,
-        summary=summary,
+        summary=fix_mojibake(summary),
+        overall_assessment_paragraphs=overall_paras,
         top_strengths=_unique([str(s) for s in strengths], 8),
         areas_to_strengthen=_unique([str(r) for r in risks], 8),
         information_gaps=_unique(gaps, 12),
@@ -127,144 +128,103 @@ def build_report_model(
         ),
         criteria_overview=overview,
         niw_overview=niw_overview,
-        disclaimer=str(evaluation.get("disclaimer") or DEFAULT_DISCLAIMER),
+        disclaimer=fix_mojibake(str(evaluation.get("disclaimer") or DEFAULT_DISCLAIMER)),
     )
 
 
-def render_markdown(report: InitialReport, evaluation: dict[str, Any]) -> str:
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    name_line = report.applicant_name or "Applicant"
+def build_full_report_bundle(
+    evaluation: dict[str, Any],
+    *,
+    intake: Optional[dict[str, Any]] = None,
+    evaluation_path: str = "",
+) -> tuple[InitialReport, str, ClientReportContent]:
+    report = build_report_model(
+        evaluation,
+        intake=intake,
+        evaluation_path=evaluation_path,
+    )
+    client = build_client_content(evaluation, report)
+    report.client_criteria = [row.model_dump() for row in client.criterion_rows]
+    markdown = render_markdown(report, evaluation, client)
+    return report, markdown, client
+
+
+def render_markdown(
+    report: InitialReport,
+    evaluation: dict[str, Any],
+    client: Optional[ClientReportContent] = None,
+) -> str:
+    if client is None:
+        client = build_client_content(evaluation, report)
+
     lines: list[str] = [
-        f"# Initial {report.visa_category} Profile Assessment",
+        f"# {client.document_title}",
         "",
-        f"**Prepared for:** {name_line}  ",
-        f"**Case ID:** `{report.case_id}`  ",
-        f"**Generated:** {now}  ",
+        f"**Prepared for:** {client.applicant_name}  ",
+        f"**Case ID:** `{client.case_id}`  ",
+        f"**Assessment date:** {client.assessment_date}  ",
+        f"**Visa category:** {client.visa_category}  ",
         f"**Attorney reviewed:** No (initial user report)  ",
         "",
-        "## Important disclaimer",
+        "## 1. Important Preliminary Disclaimer",
         "",
-        report.disclaimer or DEFAULT_DISCLAIMER,
+        client.disclaimer,
         "",
-        "## Overall preliminary rating",
-        "",
-        f"**{report.overall_rating_label}**",
-        "",
-        report.summary.replace("**", ""),
+        "## 2. Executive Summary",
         "",
     ]
-
-    summary = evaluation.get("criteria_summary") or {}
-    if summary:
-        lines.extend(
-            [
-                "## Snapshot",
-                "",
-                f"- Strong: {summary.get('strong', 0)}",
-                f"- Potential: {summary.get('potential', 0)}",
-                f"- Weak: {summary.get('weak', 0)}",
-                f"- Not indicated: {summary.get('not_indicated', 0)}",
-                f"- Not applicable: {summary.get('not_applicable', 0)}",
-                "",
-            ]
-        )
-
-    lines.extend(["## Where your profile looks strongest", ""])
-    if report.top_strengths:
-        lines.extend([f"- {s}" for s in report.top_strengths])
-    else:
-        lines.append("- No clear strong/potential areas identified yet from stated facts.")
-    lines.append("")
-
-    lines.extend(["## Areas to strengthen", ""])
-    if report.areas_to_strengthen:
-        lines.extend([f"- {s}" for s in report.areas_to_strengthen])
-    else:
-        lines.append("- No major weak areas flagged beyond normal evidence development.")
-    lines.append("")
-
-    # Criterion detail tables
-    lines.extend(["## Criterion-by-criterion overview", ""])
-    for c in evaluation.get("criteria") or []:
-        status = c.get("status")
-        if status == "not_applicable":
-            continue
-        lines.append(f"### {c.get('criterion_name')} — `{status}`")
-        lines.append("")
-        facts = c.get("applicant_facts") or []
-        if facts:
-            lines.append("**What you shared (treated as stated claims for this preliminary report):**")
-            for f in facts[:4]:
-                lines.append(f"- {f}")
-            lines.append("")
-        if c.get("reasoning_summary"):
-            # Shorten attorney-heavy wording for user report
-            reason = str(c["reasoning_summary"])
-            if len(reason) > 320:
-                reason = reason[:317] + "..."
-            lines.append(f"**Preliminary view:** {reason}")
-            lines.append("")
-        if c.get("information_gaps"):
-            lines.append("**Information still helpful to gather:**")
-            for g in c["information_gaps"][:4]:
-                lines.append(f"- {g}")
-            lines.append("")
-        if c.get("recommended_evidence") and status in {"strong", "potential", "weak"}:
-            lines.append("**Suggested supporting materials:**")
-            for e in c["recommended_evidence"][:5]:
-                lines.append(f"- {e}")
-            lines.append("")
-
-    if report.niw_overview:
-        lines.extend(["## EB-2 NIW structure (preliminary)", ""])
-        u = report.niw_overview.get("underlying_eb2") or {}
-        lines.append(
-            f"- Underlying EB-2 path: `{u.get('qualifying_path') or 'not indicated'}` "
-            f"— status `{u.get('status')}`"
-        )
-        for p in report.niw_overview.get("prongs") or []:
-            lines.append(
-                f"- {p.get('prong_name')} (`{p.get('prong_id')}`): `{p.get('status')}`"
-            )
+    for para in client.overall_assessment_paragraphs:
+        lines.append(para)
         lines.append("")
 
-    final_merits = evaluation.get("final_merits")
-    if final_merits:
-        lines.extend(["## Overall / final-merits notes (preliminary)", ""])
-        text = final_merits.get("sustained_acclaim_assessment") or ""
-        if text:
-            lines.append(text)
-            lines.append("")
-        lines.append(
-            f"Criteria currently rated strong/potential: "
-            f"{final_merits.get('threshold_criteria_count', 0)}"
-        )
-        lines.append("")
-
-    lines.extend(["## Recommended next evidence (priority list)", ""])
-    if report.recommended_next_evidence:
-        lines.extend([f"- {e}" for e in report.recommended_next_evidence])
-    else:
-        lines.append("- Continue collecting independent, verifiable documents for your strongest criteria.")
-    lines.append("")
-
-    if report.information_gaps:
-        lines.extend(["## Information gaps recorded", ""])
-        lines.extend([f"- {g}" for g in report.information_gaps[:10]])
-        lines.append("")
-
+    snap = client.snapshot
     lines.extend(
         [
-            "## Next steps",
+            "## 3. Assessment Snapshot",
             "",
-            "1. Review the strengths and gaps above.",
-            "2. Gather the recommended supporting materials for your strongest criteria.",
-            "3. Optionally request attorney review for filing strategy and evidence quality.",
+            f"- Strong: {snap.get('strong', 0)}",
+            f"- Potential: {snap.get('potential', 0)}",
+            f"- Weak: {snap.get('weak', 0)}",
+            f"- Not indicated: {snap.get('not_indicated', 0)}",
             "",
-            "---",
-            "",
-            "_End of initial user report. Attorney review status: not completed._",
+            "## 4. Criterion-by-Criterion Overview",
             "",
         ]
     )
+    for row in client.criterion_rows:
+        lines.append(f"### {row.criterion_name}")
+        lines.append("")
+        lines.append(f"- **Internal status:** `{row.internal_status}`")
+        lines.append(f"- **Client label:** {row.client_status_label}")
+        if row.explanation:
+            lines.append(f"- **Preliminary view:** {row.explanation}")
+        if row.top_evidence:
+            lines.append("- **Priority evidence:**")
+            for e in row.top_evidence:
+                lines.append(f"  - {e}")
+        lines.append("")
+
+    lines.extend(["## 5. Priority Opportunities", ""])
+    if client.priority_opportunities:
+        lines.extend([f"- {s}" for s in client.priority_opportunities])
+    else:
+        lines.append("- None identified from the current record.")
+    lines.append("")
+
+    lines.extend(["## 6. Priority Evidence Checklist", ""])
+    if client.information_still_needed:
+        lines.append("**Information still needed**")
+        lines.append("")
+        lines.extend([f"- {g}" for g in client.information_still_needed])
+        lines.append("")
+    if client.priority_evidence_checklist:
+        lines.append("**Recommended supporting materials**")
+        lines.append("")
+        lines.extend([f"- {e}" for e in client.priority_evidence_checklist])
+        lines.append("")
+
+    lines.extend(["## 7. Recommended Next Steps", ""])
+    for i, step in enumerate(client.recommended_next_steps, start=1):
+        lines.append(f"{i}. {step}")
+    lines.append("")
     return "\n".join(lines)
