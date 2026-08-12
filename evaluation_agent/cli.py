@@ -11,13 +11,15 @@ from rich.console import Console
 from rich.table import Table
 
 from .agent import EvaluationAgent
-from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR
+from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, OLLAMA_MODEL
 
 console = Console()
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    agent = EvaluationAgent()
+    console.print(f"[yellow]Using Ollama model:[/yellow] {args.model}")
+    console.print("[yellow]Evaluating criteria with LLM (this may take several minutes)...[/yellow]")
+    agent = EvaluationAgent(model=args.model)
     if args.intake_file:
         result = agent.evaluate_file(args.intake_file, category_override=args.category)
         lead_id = result.case_id or Path(args.intake_file).stem.replace("_intake", "")
@@ -36,7 +38,6 @@ def cmd_run(args: argparse.Namespace) -> int:
             category_override=args.category,
         )
         result = json.loads(out.read_text(encoding="utf-8"))
-        # re-load as dict for display
         _print_result_dict(result, out)
         return 0
 
@@ -64,7 +65,7 @@ def _print_result_dict(result: dict, out: Path) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Visa Evaluation Agent (O-1A / EB-1A / EB-2 NIW)")
+    p = argparse.ArgumentParser(description="Visa Evaluation Agent (O-1A / EB-1A / EB-2 NIW) via Ollama LLM")
     sub = p.add_subparsers(dest="command", required=True)
 
     run_p = sub.add_parser("run", help="Evaluate an Intake Agent JSON profile")
@@ -75,6 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional override: O-1A | EB-1A | EB-2 NIW",
     )
+    run_p.add_argument("--model", default=OLLAMA_MODEL, help="Ollama model name")
     run_p.add_argument("--intake-dir", default=str(INTAKE_OUTPUT_DIR))
     run_p.add_argument("--output-dir", default=str(EVAL_OUTPUT_DIR))
     run_p.set_defaults(func=cmd_run)

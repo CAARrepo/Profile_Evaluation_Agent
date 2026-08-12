@@ -47,7 +47,7 @@ python -m intake_agent run --no-llm --lead-id 00b14135-8fa0-4525-a88d-21605f6151
 
 ## Evaluation Agent
 
-Reads Intake JSON, detects visa category, routes to the matching evaluator + knowledge base:
+Reads Intake JSON, detects visa category, and uses a **local Ollama LLM** to reason about each criterion against the knowledge base (no heuristic keyword scoring).
 
 | Category | Knowledge base |
 |----------|----------------|
@@ -56,14 +56,23 @@ Reads Intake JSON, detects visa category, routes to the matching evaluator + kno
 | EB-2 NIW | `knowledge_base/EB2_NIW_evaluation_knowledge_base.json` |
 
 ```bash
+# Ensure Ollama is running and model is pulled
+ollama serve
+ollama pull qwen2.5:7b-instruct
+
 # After intake exists:
 python -m evaluation_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136
+
+# Optional model override:
+python -m evaluation_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136 --model qwen2.5:7b-instruct
 
 # Or evaluate a specific intake file / force category:
 python -m evaluation_agent run --intake-file tests/fixtures/intake_o1a.json
 python -m evaluation_agent run --intake-file tests/fixtures/intake_eb1a.json --category "EB-1A"
 python -m evaluation_agent run --intake-file tests/fixtures/intake_niw.json
 ```
+
+Env overrides: `OLLAMA_HOST`, `OLLAMA_MODEL`, or `EVAL_OLLAMA_MODEL`.
 
 Output: `evaluation_outputs/<lead_id>_evaluation.json`
 

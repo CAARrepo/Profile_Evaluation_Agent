@@ -1,4 +1,4 @@
-"""Basic Evaluation Agent tests for O-1A, EB-1A, and EB-2 NIW."""
+"""Basic Evaluation Agent tests for O-1A, EB-1A, and EB-2 NIW (LLM mocked)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import pytest
 
 from evaluation_agent import EvaluationAgent
 from evaluation_agent.router import detect_visa_category
+from tests.fakes import FakeJudge
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -17,24 +18,27 @@ def _load(name: str) -> dict:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+@pytest.fixture
+def agent() -> EvaluationAgent:
+    return EvaluationAgent(judge=FakeJudge())  # type: ignore[arg-type]
+
+
 def test_detect_categories():
     assert detect_visa_category(_load("intake_o1a.json")) == "O-1A"
     assert detect_visa_category(_load("intake_eb1a.json")) == "EB-1A"
     assert detect_visa_category(_load("intake_niw.json")) == "EB-2 NIW"
 
 
-def test_o1a_evaluation_structure():
-    agent = EvaluationAgent()
+def test_o1a_evaluation_structure(agent: EvaluationAgent):
     result = agent.evaluate_intake(_load("intake_o1a.json"))
     assert result.visa_category == "O-1A"
     assert result.attorney_review_required is True
     assert result.disclaimer
     assert result.final_merits is not None
-    assert len(result.criteria) == 8  # O-1A KB has 8 criteria
+    assert len(result.criteria) == 8
     ids = {c.criterion_id for c in result.criteria}
     assert "o1a_awards" in ids
     assert "o1a_judging" in ids
-    # Yes + details should not be failed solely for missing docs
     awards = next(c for c in result.criteria if c.criterion_id == "o1a_awards")
     assert awards.status in {"strong", "potential", "weak"}
     assert awards.status != "not_indicated"
@@ -45,14 +49,13 @@ def test_o1a_evaluation_structure():
         "developing",
         "insufficient_information",
     }
-    # high_salary yes with no details -> weak/gap, not blocked
     salary = next(c for c in result.criteria if c.criterion_id == "o1a_high_salary")
     assert salary.status == "weak"
     assert salary.information_gaps or salary.weaknesses
+    assert result.raw_notes.get("evaluation_method") == "ollama_llm_per_criterion"
 
 
-def test_eb1a_evaluation_structure():
-    agent = EvaluationAgent()
+def test_eb1a_evaluation_structure(agent: EvaluationAgent):
     result = agent.evaluate_intake(_load("intake_eb1a.json"))
     assert result.visa_category == "EB-1A"
     assert result.final_merits is not None
@@ -64,8 +67,7 @@ def test_eb1a_evaluation_structure():
     assert result.criteria_summary.strong + result.criteria_summary.potential >= 3
 
 
-def test_niw_evaluation_structure():
-    agent = EvaluationAgent()
+def test_niw_evaluation_structure(agent: EvaluationAgent):
     result = agent.evaluate_intake(_load("intake_niw.json"))
     assert result.visa_category == "EB-2 NIW"
     assert result.underlying_eb2 is not None
@@ -76,15 +78,14 @@ def test_niw_evaluation_structure():
     assert result.underlying_eb2.qualifying_path in {
         "eb2_advanced_degree",
         "bachelors_plus_five_or_exceptional_ability",
+        "eb2_exceptional_ability",
         "",
     }
-    # PhD sample should look like advanced degree
     assert result.underlying_eb2.status in {"strong", "potential"}
     assert result.recommended_next_evidence
 
 
-def test_category_override():
-    agent = EvaluationAgent()
+def test_category_override(agent: EvaluationAgent):
     intake = _load("intake_o1a.json")
     result = agent.evaluate_intake(intake, category_override="EB-1A")
     assert result.visa_category == "EB-1A"

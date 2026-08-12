@@ -25,3 +25,9 @@ DEFAULT_DISCLAIMER = (
     "Preliminary AI-assisted profile assessment only. "
     "Final eligibility requires attorney review."
 )
+
+# Local Ollama (override with EVAL_OLLAMA_MODEL / OLLAMA_MODEL / OLLAMA_HOST)
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.environ.get("EVAL_OLLAMA_MODEL") or os.environ.get(
+    "OLLAMA_MODEL", "qwen2.5:7b-instruct"
+)

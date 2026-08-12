@@ -6,20 +6,30 @@ import json
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR
+from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, OLLAMA_HOST, OLLAMA_MODEL
 from .evaluators import EB1AEvaluator, NIWEvaluator, O1AEvaluator
+from .llm_judge import LLMJudge
 from .router import detect_visa_category
 from .schema import EvaluationResult, VisaCategory
 
 
 class EvaluationAgent:
-    """Facade: load intake JSON → detect category → run evaluator → save result."""
+    """Facade: load intake JSON → detect category → run LLM evaluator → save result."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        model: str = OLLAMA_MODEL,
+        host: str = OLLAMA_HOST,
+        judge: Optional[LLMJudge] = None,
+    ) -> None:
+        self.model = model
+        self.host = host
+        shared_judge = judge or LLMJudge(model=model, host=host, ensure_available=True)
         self._evaluators = {
-            "O-1A": O1AEvaluator(),
-            "EB-1A": EB1AEvaluator(),
-            "EB-2 NIW": NIWEvaluator(),
+            "O-1A": O1AEvaluator(model=model, host=host, judge=shared_judge),
+            "EB-1A": EB1AEvaluator(model=model, host=host, judge=shared_judge),
+            "EB-2 NIW": NIWEvaluator(model=model, host=host, judge=shared_judge),
         }
 
     def evaluate_intake(

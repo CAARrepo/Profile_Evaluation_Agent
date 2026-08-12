@@ -5,33 +5,32 @@
   "overall_profile_rating": "promising",
   "criteria_summary": {
     "strong": 1,
-    "potential": 3,
-    "weak": 4,
-    "not_indicated": 0,
+    "potential": 4,
+    "weak": 0,
+    "not_indicated": 3,
     "not_applicable": 0
   },
   "criteria": [
     {
       "criterion_id": "o1a_awards",
       "criterion_name": "Nationally or Internationally Recognized Prizes or Awards",
-      "status": "strong",
+      "status": "potential",
       "confidence": "medium",
       "applicant_facts": [
-        "Applicant states (awards): Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023) — national recognition among career creators"
+        "Applicant states (awards): Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers (2023)"
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Nationally or Internationally Recognized Prizes or Awards': Receipt of nationally or internationally recognized prizes or awards for excellence in the field of endeavor. Status=strong reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
+      "reasoning_summary": "The applicant states they are a recipient of the 'Unstop (formerly Dare2Compete) Top 75 Unstoppable Education & Career Influencers' award. However, there is no additional information provided to confirm that this award meets the required elements for nationally or internationally recognized prizes or awards. The award name and issuer are not detailed, and there is no evidence of its national/international recognition.",
       "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion.",
-        "Detailed applicant-stated facts include markers consistent with stronger profiles."
+        "The applicant has received an award in their field."
       ],
       "weaknesses": [
-        "Stated facts resemble a weak/risky pattern: Company award without evidence of broader recognition."
+        "No proof that the award is for excellence in the relevant field.",
+        "No evidence that the award has national or international recognition."
       ],
       "information_gaps": [
         "Award prestige is not explained.",
         "No proof applicant was a recipient.",
-        "No evidence award is national/international.",
-        "No selection criteria."
+        "No evidence award is national/international."
       ],
       "recommended_evidence": [
         "Award certificate.",
@@ -51,48 +50,37 @@
       "applicant_facts": [
         "Applicant states (memberships): LinkedIn Creator Accelerator Program and LinkedIn Top Voice"
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Membership in Associations Requiring Outstanding Achievements': Membership in associations in the field that require outstanding achievements of members, judged by recognized national or international experts. Status=potential reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
+      "reasoning_summary": "The applicant states membership in the LinkedIn Creator Accelerator Program and LinkedIn Top Voice. While these are notable recognitions, they do not necessarily meet the O-1A criterion of being a member of an association that requires outstanding achievements judged by recognized experts. The stated memberships may be based on other criteria such as fees or contributions rather than achievement alone.",
       "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion.",
-        "Applicant-stated facts may map to this criterion for preliminary analysis."
+        "The applicant has been recognized by LinkedIn for her content creation and expertise."
       ],
-      "weaknesses": [],
+      "weaknesses": [
+        "It is unclear if the membership in these programs requires outstanding achievements judged by recognized experts."
+      ],
       "information_gaps": [
-        "Membership tier unknown.",
-        "No proof outstanding achievements are required.",
-        "No evidence experts judge admission."
+        "Membership tier or criteria not specified.",
+        "No proof that admission to these programs is based on outstanding achievements."
       ],
       "recommended_evidence": [
-        "Membership certificate.",
-        "Association bylaws.",
-        "Admission requirements.",
-        "Selection committee qualifications.",
-        "Statistics on selectivity.",
-        "Official description of membership grade."
+        "Official description of LinkedIn Creator Accelerator Program and Top Voice membership requirements.",
+        "Documentation from LinkedIn detailing the selection process for these programs."
       ]
     },
     {
       "criterion_id": "o1a_published_material",
       "criterion_name": "Published Material About the Applicant",
-      "status": "weak",
-      "confidence": "medium",
+      "status": "strong",
+      "confidence": "high",
       "applicant_facts": [
         "Applicant states (media): - **Business Insider** — featured (details to be confirmed/added)\n- **Cornell Daily Sun** — profile feature: *\"LinkedIn Top Voice Jahnavi Shah, MEng '23, shares career advice to 70K followers\"* (Feb 2025)\n- **Study International UK** — featured in article on applying for jobs in the U.S."
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Published Material About the Applicant': Published material in professional or major trade publications or major media about the applicant, relating to the applicant's work. Status=weak reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
+      "reasoning_summary": "The applicant has provided evidence of being featured in 'Business Insider' and having a profile feature in the 'Cornell Daily Sun'. Both publications are reputable, with 'Business Insider' being a major media outlet and 'Cornell Daily Sun' known for its coverage of university-related news. The features discuss her work as an AI content creator and product manager, which aligns well with the required elements.",
       "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion."
+        "The applicant has been featured in reputable publications such as Business Insider and Cornell Daily Sun.",
+        "The articles are substantive and discuss the applicant's work rather than just mentioning their name."
       ],
-      "weaknesses": [
-        "Stated facts resemble a weak/risky pattern: Applicant-authored article.",
-        "Applicant statement includes self-identified limitations on impact or completeness."
-      ],
-      "information_gaps": [
-        "Publication stature unknown.",
-        "Article not actually about applicant.",
-        "Only URL or screenshot supplied without publication context.",
-        "Sponsored nature unclear."
-      ],
+      "weaknesses": [],
+      "information_gaps": [],
       "recommended_evidence": [
         "Full article.",
         "Title/date/author.",
@@ -105,159 +93,122 @@
     {
       "criterion_id": "o1a_judging",
       "criterion_name": "Judging the Work of Others",
-      "status": "potential",
-      "confidence": "medium",
+      "status": "not_indicated",
+      "confidence": "low",
       "applicant_facts": [
         "Applicant states (judging): Startup Hackathon in SF"
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Judging the Work of Others': Participation on a panel, or individually, as a judge of the work of others in the same or an allied field. Status=potential reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
-      "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion.",
-        "Applicant-stated facts may map to this criterion for preliminary analysis."
-      ],
+      "reasoning_summary": "The applicant states participation in a Startup Hackathon in SF, but this does not directly indicate judging the work of others. There is no evidence provided to support that the applicant participated as a judge or reviewer.",
+      "strengths": [],
       "weaknesses": [
-        "Stated facts resemble a weak/risky pattern: Judging unrelated to applicant's claimed field."
+        "No specific information on whether the applicant judged the work of others."
       ],
       "information_gaps": [
-        "Number of completed reviews unknown.",
-        "Publication or conference reputation unknown.",
-        "No distinction between invitation and completed judging.",
-        "Field relationship unclear."
+        "Details about the Startup Hackathon, such as role and activities during the event."
       ],
       "recommended_evidence": [
-        "Reviewer invitation emails.",
-        "Completion confirmations.",
-        "Editorial system history.",
-        "Certificates acknowledging completed reviews.",
-        "Public judge-panel listings.",
-        "Letters from editors describing review activity."
+        "Any documents or emails confirming participation in judging activities at the hackathon."
       ]
     },
     {
       "criterion_id": "o1a_original_contributions",
       "criterion_name": "Original Contributions of Major Significance",
-      "status": "weak",
-      "confidence": "medium",
+      "status": "not_indicated",
+      "confidence": "low",
       "applicant_facts": [
-        "Applicant states (patents): Design  Patent in India but never launched so no impact to show",
-        "Applicant states (conferences): I've spoken and hosted multiple workshops"
+        "Applicant states (patents): Design Patent in India but never launched so no impact to show",
+        "Applicant states (conferences): Spoken and hosted multiple workshops"
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Original Contributions of Major Significance': Original scientific, scholarly, or business-related contributions of major significance in the field. Status=weak reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
-      "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion."
-      ],
+      "reasoning_summary": "The applicant's stated facts do not provide clear evidence of original contributions of major significance in the field. While she has been featured in media outlets and spoken at conferences, these achievements alone are insufficient to meet the O-1A criterion for original contributions without additional supporting documentation such as patents, citations, or independent expert letters.",
+      "strengths": [],
       "weaknesses": [
-        "Applicant statement includes self-identified limitations on impact or completeness."
+        "No specific evidence of original contributions is provided."
       ],
       "information_gaps": [
-        "Originality not described.",
-        "Impact only asserted, not quantified.",
-        "No independent adoption evidence.",
-        "Applicant's personal role unclear."
+        "Lack of detailed information on the nature and significance of any contributions made by the applicant."
       ],
       "recommended_evidence": [
         "Patent and licensing records.",
         "Citation data with field context.",
-        "Independent expert letters with concrete examples.",
-        "Adoption/customer/use metrics.",
-        "Revenue or cost savings attributable to contribution.",
-        "Standards citations.",
-        "Third-party references to applicant's work.",
-        "Technical documentation showing applicant's role."
+        "Independent expert letters with concrete examples."
       ]
     },
     {
       "criterion_id": "o1a_scholarly_authorship",
       "criterion_name": "Authorship of Scholarly Articles",
-      "status": "potential",
-      "confidence": "medium",
+      "status": "not_indicated",
+      "confidence": "low",
       "applicant_facts": [
-        "Applicant states (conferences): I've spoken and hosted multiple workshops"
+        "Applicant states (conferences): Spoken and hosted multiple workshops"
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Authorship of Scholarly Articles': Authorship of scholarly articles in the field, in professional journals or other major media. Status=potential reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
-      "strengths": [
-        "Stated facts appear to address multiple required elements of the criterion.",
-        "Applicant-stated facts may map to this criterion for preliminary analysis."
+      "reasoning_summary": "The applicant's statement about speaking and hosting multiple workshops does not directly relate to authorship of scholarly articles, which is the focus of this criterion. There are no specific publications mentioned in the provided facts.",
+      "strengths": [],
+      "weaknesses": [
+        "No specific publications or scholarly articles have been mentioned."
       ],
-      "weaknesses": [],
       "information_gaps": [
-        "Venue quality unknown.",
-        "Articles are not scholarly.",
-        "Authorship not established.",
-        "Citation metrics supplied without context."
+        "No specific publications mentioned."
       ],
       "recommended_evidence": [
         "Publication copies.",
         "DOIs and bibliographic records.",
-        "Journal/conference information.",
-        "Citation profiles.",
-        "Peer-review information.",
-        "Authorship contribution documentation if needed."
+        "Journal/conference information."
       ]
     },
     {
       "criterion_id": "o1a_critical_essential_role",
       "criterion_name": "Critical or Essential Capacity for Distinguished Organizations",
-      "status": "weak",
+      "status": "potential",
       "confidence": "low",
       "applicant_facts": [
         "Applicant answered yes to critical_role but provided no details."
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'Critical or Essential Capacity for Distinguished Organizations': Employment in a critical or essential capacity for organizations or establishments that have a distinguished reputation. Status=weak reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
+      "reasoning_summary": "The applicant has stated they played a critical or essential role, but no details were provided to support this claim. Given the nature of the O-1A visa requirement for a distinguished reputation and critical role, more information is needed to substantiate the claim.",
       "strengths": [],
       "weaknesses": [
-        "Applicant answered yes without providing supporting details."
+        "Applicant answered yes but provided no details about their role or organization's distinction."
       ],
       "information_gaps": [
         "Applicant answered yes but provided no details",
-        "Organization's distinction not documented.",
-        "Applicant's role described generically.",
-        "No measurable outcomes."
+        "Organization's distinction not documented",
+        "Applicant's role described generically"
       ],
       "recommended_evidence": [
-        "Detailed employer letters.",
-        "Organizational charts.",
-        "Project documentation.",
-        "Metrics showing applicant's impact.",
-        "Evidence of organization's reputation.",
-        "Press coverage or rankings of organization.",
-        "Awards/funding/market position of organization."
+        "Detailed employer letters explaining the applicant's critical role.",
+        "Organizational charts showing the applicant's position and responsibilities.",
+        "Project documentation linking the applicant's performance to important organizational outcomes."
       ]
     },
     {
       "criterion_id": "o1a_high_salary",
       "criterion_name": "High Salary or Remuneration",
-      "status": "weak",
-      "confidence": "low",
+      "status": "potential",
+      "confidence": "medium",
       "applicant_facts": [
         "Applicant answered yes to high_salary but provided no details."
       ],
-      "reasoning_summary": "For preliminary analysis, applicant-stated facts are treated as true and assessed against 'High Salary or Remuneration': Applicant has commanded or will command a high salary or other remuneration for services. Status=weak reflects how completely the stated facts appear to address the criterion elements — not a USCIS determination.",
-      "strengths": [],
+      "reasoning_summary": "The applicant has stated 'yes' to the high_salary criterion, but no details were provided. While this indicates a potential for meeting the requirement, without supporting evidence such as pay statements or tax records, we cannot confirm if the salary is indeed high in a relevant comparison group.",
+      "strengths": [
+        "Applicant self-reported having commanded a high salary."
+      ],
       "weaknesses": [
-        "Applicant answered yes without providing supporting details."
+        "No details provided to substantiate the claim of commanding a high salary."
       ],
       "information_gaps": [
         "Applicant answered yes but provided no details",
-        "No comparator.",
-        "Wrong geographic comparison.",
-        "Total compensation not separated."
+        "No comparator or reliable compensation evidence provided."
       ],
       "recommended_evidence": [
         "Pay statements.",
         "W-2/1099 or tax records where appropriate.",
         "Employment contract.",
-        "Offer letter.",
-        "Equity/bonus documentation.",
-        "Reliable wage surveys.",
-        "Government wage data.",
-        "Industry compensation studies."
+        "Offer letter."
       ]
     }
   ],
   "final_merits": {
     "sustained_acclaim_assessment": "Preliminary sustained-acclaim view: multiple criteria show promising applicant-stated recognition patterns. KB final-merits factors considered conceptually include: Sustained national or international acclaim rather than isolated success.",
-    "threshold_criteria_count": 4,
+    "threshold_criteria_count": 5,
     "major_award_path_possible": false,
     "notes": [
       "Meeting three criteria is a threshold, not an automatic approval determination.",
@@ -268,17 +219,13 @@
   "underlying_eb2": null,
   "niw_prongs": [],
   "top_strengths": [
-    "Nationally or Internationally Recognized Prizes or Awards (strong)",
-    "Authorship of Scholarly Articles (potential)",
-    "Judging the Work of Others (potential)",
-    "Membership in Associations Requiring Outstanding Achievements (potential)"
+    "Published Material About the Applicant (strong)",
+    "Critical or Essential Capacity for Distinguished Organizations (potential)",
+    "High Salary or Remuneration (potential)",
+    "Membership in Associations Requiring Outstanding Achievements (potential)",
+    "Nationally or Internationally Recognized Prizes or Awards (potential)"
   ],
-  "top_risks": [
-    "Published Material About the Applicant: Stated facts resemble a weak/risky pattern: Applicant-authored article.",
-    "Original Contributions of Major Significance: Applicant statement includes self-identified limitations on impact or completeness.",
-    "Critical or Essential Capacity for Distinguished Organizations: Applicant answered yes without providing supporting details.",
-    "High Salary or Remuneration: Applicant answered yes without providing supporting details."
-  ],
+  "top_risks": [],
   "recommended_next_evidence": [
     "Award certificate.",
     "Official award webpage.",
@@ -287,20 +234,15 @@
     "Independent media coverage.",
     "Evidence of award issuer's reputation.",
     "Prior distinguished recipients.",
-    "Membership certificate.",
-    "Association bylaws.",
-    "Admission requirements."
+    "Official description of LinkedIn Creator Accelerator Program and Top Voice membership requirements.",
+    "Documentation from LinkedIn detailing the selection process for these programs.",
+    "Full article."
   ],
   "attorney_review_required": true,
   "disclaimer": "Preliminary AI-assisted profile assessment only. Final eligibility requires attorney review.",
   "raw_notes": {
-    "evaluation_method": {
-      "step_1": "Determine whether the applicant reports a major internationally recognized award or potentially satisfies at least three regulatory criteria.",
-      "step_2": "For each potentially satisfied criterion, evaluate whether the stated facts actually match every material element of that criterion.",
-      "step_3": "Assess the totality of the record for sustained national or international acclaim and whether the profile indicates the applicant has risen to the very top of the field.",
-      "step_4": "Assess whether the proposed U.S. work is in the same or closely related area of extraordinary ability.",
-      "warning": "Meeting three criteria is a threshold, not an automatic approval determination."
-    },
+    "evaluation_method": "ollama_llm_per_criterion",
+    "ollama_model": "qwen2.5:7b-instruct",
     "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only."
   }
 }

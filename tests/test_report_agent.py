@@ -7,12 +7,13 @@ from pathlib import Path
 
 from evaluation_agent import EvaluationAgent
 from report_agent import ReportAgent
+from tests.fakes import FakeJudge
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_initial_report_from_o1a_fixture(tmp_path: Path):
-    evaluation = EvaluationAgent().evaluate_intake(
+    evaluation = EvaluationAgent(judge=FakeJudge()).evaluate_intake(  # type: ignore[arg-type]
         json.loads((FIXTURES / "intake_o1a.json").read_text(encoding="utf-8"))
     )
     eval_dict = json.loads(evaluation.model_dump_json())
@@ -34,7 +35,7 @@ def test_initial_report_from_o1a_fixture(tmp_path: Path):
     assert "Attorney reviewed:** No" in markdown
     assert "Initial O-1A Profile Assessment" in markdown
     assert "Recommended next evidence" in markdown
-    # save paths
+
     md = tmp_path / "r.md"
     js = tmp_path / "r.json"
     md.write_text(markdown, encoding="utf-8")
@@ -43,7 +44,7 @@ def test_initial_report_from_o1a_fixture(tmp_path: Path):
 
 
 def test_initial_report_niw_includes_prongs():
-    evaluation = EvaluationAgent().evaluate_intake(
+    evaluation = EvaluationAgent(judge=FakeJudge()).evaluate_intake(  # type: ignore[arg-type]
         json.loads((FIXTURES / "intake_niw.json").read_text(encoding="utf-8"))
     )
     report, markdown = ReportAgent().generate_from_evaluation(

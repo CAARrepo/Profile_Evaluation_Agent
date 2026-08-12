@@ -1,4 +1,4 @@
-"""EB-2 NIW evaluator: underlying EB-2 + three Dhanasar prongs."""
+"""EB-2 NIW evaluator: underlying EB-2 + three Dhanasar prongs (LLM reasoning)."""
 
 from __future__ import annotations
 
@@ -10,27 +10,8 @@ from ..schema import (
     NIWProngEvaluation,
     NIWUnderlyingEB2,
 )
-from ..scoring import (
-    collect_mapped_facts,
-    overall_rating_from_niw,
-    score_from_facts,
-    summarize_statuses,
-)
+from ..scoring import collect_mapped_facts, merge_gap_lists, overall_rating_from_niw, summarize_statuses
 from .base import BaseEvaluator
-
-_ADVANCED_DEGREE_MARKERS = (
-    "master",
-    "m.s",
-    "ms ",
-    "m.eng",
-    "meng",
-    "mba",
-    "ph.d",
-    "phd",
-    "doctor",
-    "jd",
-    "md ",
-)
 
 
 class NIWEvaluator(BaseEvaluator):
@@ -43,8 +24,6 @@ class NIWEvaluator(BaseEvaluator):
 
         underlying = self._evaluate_underlying_eb2(intake, part1)
         prongs = self._evaluate_prongs(intake, part2.get("prongs") or [])
-
-        # Also expose exceptional-ability regulatory criteria as optional criterion rows
         ea_criteria = (part1.get("exceptional_ability_path") or {}).get("criteria") or []
         ea_evals = self._evaluate_ea_criteria(intake, ea_criteria)
 
@@ -84,6 +63,8 @@ class NIWEvaluator(BaseEvaluator):
                     next_ev.append(item)
         result.recommended_next_evidence = next_ev[:10]
         result.raw_notes = {
+            "evaluation_method": "ollama_llm_per_criterion",
+            "ollama_model": self.model,
             "all_prongs_required": part2.get("all_prongs_required", True),
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
             "underlying_eb2_status": underlying.status,
@@ -91,87 +72,47 @@ class NIWEvaluator(BaseEvaluator):
         }
         return result
 
-    def _evaluate_underlying_eb2(self, intake: dict[str, Any], part1: dict[str, Any]) -> NIWUnderlyingEB2:
-        adv = part1.get("advanced_degree_path") or {}
-        edu_facts = []
+    def _collect_niw_facts(self, intake: dict[str, Any]) -> tuple[list[str], list[str]]:
+        facts = self.profile_context_facts(intake)
+        award_facts, gaps, _ = collect_mapped_facts(
+            intake,
+            ["awards", "media", "publications", "critical_role", "patents", "memberships", "google_scholar"],
+        )
+        facts.extend(award_facts)
         for edu in intake.get("education") or []:
             deg = edu.get("degree") or ""
             inst = edu.get("institution") or ""
             if deg or inst:
-                edu_facts.append(f"{deg} — {inst}".strip(" —"))
-        # Also scan claims/summary
-        blob = " ".join(
-            [
-                *(edu_facts),
-                str(intake.get("summary") or ""),
-                str(intake.get("field_of_endeavor") or ""),
-                *[(c if isinstance(c, str) else "") for c in (intake.get("claims") or [])],
-            ]
-        ).lower()
+                facts.append(f"Education: {deg} — {inst}".strip(" —"))
+        # de-dupe while preserving order
+        seen: set[str] = set()
+        uniq: list[str] = []
+        for f in facts:
+            if f and f not in seen:
+                seen.add(f)
+                uniq.append(f)
+        return uniq, gaps
 
-        has_advanced = any(m in blob for m in _ADVANCED_DEGREE_MARKERS)
-        employment_years_hint = len(intake.get("employment") or []) >= 3
-
-        gaps: list[str] = []
-        facts: list[str] = list(edu_facts)
-        if not facts:
-            gaps.append("Highest degree / education details not clearly provided in intake.")
-        gaps.extend(list(adv.get("common_weaknesses") or [])[:2])
-
-        if has_advanced:
-            status, confidence = "strong", "medium"
-            path = "eb2_advanced_degree"
-            reasoning = (
-                "Intake indicates an advanced-degree-style credential; treated as a preliminary "
-                "advanced-degree EB-2 path under MVP assumptions."
-            )
-            strengths_ev = []
-            for route in adv.get("qualifying_routes") or []:
-                if route.get("route") == "advanced_degree":
-                    strengths_ev = list(route.get("recommended_evidence") or [])
-                    break
-            return NIWUnderlyingEB2(
-                qualifying_path=path,
-                status=status,
-                confidence=confidence,
-                supporting_facts=facts or ["Advanced-degree markers found in intake text."],
-                information_gaps=gaps[:5],
-                recommended_evidence=strengths_ev[:6],
-                reasoning_summary=reasoning,
-            )
-
-        if employment_years_hint:
-            return NIWUnderlyingEB2(
-                qualifying_path="bachelors_plus_five_or_exceptional_ability",
-                status="potential",
-                confidence="low",
-                supporting_facts=facts
-                + [f"Employment records present: {len(intake.get('employment') or [])} roles."],
-                information_gaps=gaps
-                + [
-                    "Progressive post-baccalaureate experience of 5+ years not clearly documented.",
-                    "Exceptional-ability path may need separate criterion support.",
-                ],
-                recommended_evidence=[
-                    "Bachelor's diploma/transcript",
-                    "Employer experience letters",
-                    "Detailed job progression",
-                ],
-                reasoning_summary=(
-                    "No clear advanced degree found; employment history may support bachelor's+5 "
-                    "or exceptional ability, but intake details are incomplete."
-                ),
-            )
-
+    def _evaluate_underlying_eb2(self, intake: dict[str, Any], part1: dict[str, Any]) -> NIWUnderlyingEB2:
+        facts, gaps = self._collect_niw_facts(intake)
+        judgment = self.judge.judge_niw_underlying(
+            part1=part1,
+            applicant_facts=facts,
+            information_gaps=gaps,
+            profile_context=self.profile_context_facts(intake)[:8],
+        )
+        supporting = judgment["supporting_facts"] or facts[:8]
+        # Never keep supporting facts that are not grounded in provided text
+        allowed = set(facts)
+        supporting = [s for s in supporting if s in allowed] or facts[:8]
         return NIWUnderlyingEB2(
-            qualifying_path="",
-            status="not_indicated",
-            confidence="low",
-            supporting_facts=facts,
-            information_gaps=gaps
-            + ["Underlying EB-2 qualifying path not clearly indicated from intake."],
-            recommended_evidence=["Diploma/transcripts", "Experience letters", "Credential evaluation"],
-            reasoning_summary="Insufficient intake facts to preliminarily establish underlying EB-2.",
+            qualifying_path=judgment["qualifying_path"],
+            status=judgment["status"],
+            confidence=judgment["confidence"],
+            supporting_facts=supporting,
+            information_gaps=merge_gap_lists(gaps, judgment["information_gaps"], limit=8),
+            recommended_evidence=judgment["recommended_evidence"],
+            reasoning_summary=judgment["reasoning_summary"],
         )
 
     def _evaluate_prongs(
@@ -179,88 +120,28 @@ class NIWEvaluator(BaseEvaluator):
         intake: dict[str, Any],
         prong_defs: list[dict[str, Any]],
     ) -> list[NIWProngEvaluation]:
-        context_facts = self.profile_context_facts(intake)
-        claims = [c for c in (intake.get("claims") or []) if c]
-        field = (intake.get("field_of_endeavor") or "").strip()
-        summary = (intake.get("summary") or "").strip()
-
-        # Reuse awards/media/critical_role style facts as positioning evidence
-        award_facts, _, _ = collect_mapped_facts(intake, ["awards", "media", "publications", "critical_role", "patents"])
-
+        facts, gaps = self._collect_niw_facts(intake)
         out: list[NIWProngEvaluation] = []
         for pdef in prong_defs:
-            pid = pdef["prong_id"]
-            name = pdef.get("name") or pid
-            facts = list(context_facts[:5])
-            if field:
-                facts.append(f"Proposed / stated field: {field}")
-            if summary:
-                facts.append(f"Summary: {summary}")
-            facts.extend(award_facts[:5])
-            facts.extend([f"Claim: {c}" for c in claims[:5]])
-            facts = _unique([f for f in facts if f])
-
-            # Prong-specific scoring emphasis
-            if pid == "niw_prong_1":
-                has_endeavor = bool(field) or any("endeavor" in f.lower() for f in facts)
-                dominant = "yes" if has_endeavor or claims else "unknown"
-                status, confidence, strengths, weaknesses = score_from_facts(
-                    facts=facts if has_endeavor or claims else [],
-                    dominant_answer=dominant if has_endeavor or claims else "unknown",
-                )
-                if not has_endeavor:
-                    weaknesses.append("Proposed endeavor not clearly defined.")
-                    status = "weak" if facts else "not_indicated"
-                gaps = list(pdef.get("common_information_gaps") or [])[:4]
-                rec = [
-                    "Clear statement of proposed endeavor",
-                    "Evidence of substantial merit",
-                    "Evidence of national importance beyond one employer",
-                ]
-                reasoning = (
-                    f"{pdef.get('legal_concept') or name}. "
-                    "Preliminary view based on stated field/claims only."
-                )
-            elif pid == "niw_prong_2":
-                status, confidence, strengths, weaknesses = score_from_facts(
-                    facts=facts,
-                    dominant_answer="yes" if facts else "unknown",
-                )
-                gaps = list(pdef.get("common_information_gaps") or [])[:4]
-                rec = list(pdef.get("recommended_evidence") or [])[:8]
-                reasoning = (
-                    f"{pdef.get('legal_concept') or name}. "
-                    "Education, record, and claimed achievements used as preliminary positioning signals."
-                )
-            else:  # prong 3
-                status, confidence, strengths, weaknesses = score_from_facts(
-                    facts=facts,
-                    dominant_answer="yes" if (field or claims) else "unknown",
-                )
-                # Waiver argument often missing from generic intake
-                if not any("waiver" in f.lower() or "national interest" in f.lower() for f in facts):
-                    weaknesses.append("No explicit national-interest waiver argument in intake.")
-                    if status == "strong":
-                        status = "potential"
-                    confidence = "low"
-                gaps = list(pdef.get("common_information_gaps") or [])[:4]
-                rec = list(pdef.get("recommended_evidence") or [])[:8]
-                reasoning = (
-                    f"{pdef.get('legal_concept') or name}. "
-                    "Intake rarely contains a full Prong-3 waiver theory; status is conservative."
-                )
-
+            prong_gaps = list(gaps) + list(pdef.get("common_information_gaps") or [])[:3]
+            judgment = self.judge.judge_niw_prong(
+                prong=pdef,
+                applicant_facts=facts,
+                information_gaps=prong_gaps,
+                profile_context=self.profile_context_facts(intake)[:8],
+            )
             out.append(
                 NIWProngEvaluation(
-                    prong_id=pid,
-                    prong_name=name,
-                    status=status,
-                    confidence=confidence,
+                    prong_id=str(pdef.get("prong_id") or ""),
+                    prong_name=str(pdef.get("name") or pdef.get("prong_id") or ""),
+                    status=judgment["status"],
+                    confidence=judgment["confidence"],
                     supporting_facts=facts[:8],
-                    reasoning_summary=reasoning,
-                    weaknesses=weaknesses,
-                    information_gaps=gaps,
-                    recommended_evidence=rec,
+                    reasoning_summary=judgment["reasoning_summary"],
+                    weaknesses=judgment["weaknesses"],
+                    information_gaps=merge_gap_lists(prong_gaps, judgment["information_gaps"], limit=8),
+                    recommended_evidence=judgment["recommended_evidence"]
+                    or list(pdef.get("recommended_evidence") or [])[:6],
                 )
             )
         return out
@@ -282,55 +163,16 @@ class NIWEvaluator(BaseEvaluator):
         for cdef in criteria_defs:
             cid = cdef["criterion_id"]
             keys = mapping.get(cid, [])
-            facts, gaps, answer = collect_mapped_facts(intake, keys)
-            # Education as academic record
-            if cid == "eb2_ea_academic_record":
-                for edu in intake.get("education") or []:
-                    deg = edu.get("degree") or ""
-                    inst = edu.get("institution") or ""
-                    if deg or inst:
-                        facts.append(f"Education: {deg} — {inst}".strip(" —"))
-                if facts and answer == "unknown":
-                    answer = "yes"
-            if cid == "eb2_ea_ten_years_experience":
-                n = len(intake.get("employment") or [])
-                if n:
-                    facts.append(f"Employment entries in intake: {n}")
-                    answer = "yes" if answer == "unknown" else answer
-
-            status, confidence, strengths, weaknesses = score_from_facts(
-                facts=facts,
-                dominant_answer=answer,
-                required_elements=list(cdef.get("required_elements") or []),
-                weak_examples=list(cdef.get("weak_or_risky_examples") or []),
-            )
+            # Seed education/employment facts into intake-like extras via occupation note + profile context
             evals.append(
-                CriterionEvaluation(
-                    criterion_id=cid,
-                    criterion_name=cdef.get("name") or cid,
-                    status=status,
-                    confidence=confidence,
-                    applicant_facts=facts,
-                    reasoning_summary=(
-                        f"Exceptional-ability regulatory category '{cdef.get('name')}' "
-                        f"scored from intake facts for underlying EB-2 analysis support."
+                self.llm_evaluate_criterion(
+                    intake=intake,
+                    criterion_def=cdef,
+                    intake_keys=keys,
+                    occupation_note=(
+                        "Also consider education/employment listed in profile_context for this "
+                        "exceptional-ability regulatory category."
                     ),
-                    strengths=strengths,
-                    weaknesses=weaknesses,
-                    information_gaps=(gaps + list(cdef.get("common_information_gaps") or [])[:2])[:5],
-                    recommended_evidence=list(cdef.get("recommended_evidence") or [])[:6]
-                    if status != "not_indicated"
-                    else [],
                 )
             )
         return evals
-
-
-def _unique(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for item in items:
-        if item and item not in seen:
-            seen.add(item)
-            out.append(item)
-    return out
