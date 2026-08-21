@@ -1,0 +1,217 @@
+{
+  "_comment": [
+    "Human-verified corrections applied on top of the automated extraction in",
+    "tools/aao_parse.py. Each entry was checked against the decision text.",
+    "Keys are original PDF filenames."
+  ],
+  "endocrinologist.pdf": {
+    "occupation": "Endocrinologist (physician)",
+    "occupation_slug": "Endocrinologist",
+    "field": "Science",
+    "field_basis": "stated in decision (extraordinary ability in medical science)",
+    "petitioner_description": "health care provider",
+    "notes": "Legacy 2005 AAO decision; identified by receipt number rather than an In Re number."
+  },
+  "Israeli entrepreneur.pdf": {
+    "occupation": "Startup co-founder (marketing/sales technology platform)",
+    "occupation_slug": "Startup-Co-Founder",
+    "field": "Business",
+    "field_basis": "stated in decision"
+  },
+  "researcher.pdf": {
+    "occupation": "Cancer researcher",
+    "occupation_slug": "Cancer-Researcher",
+    "field": "Science",
+    "field_basis": "stated in decision"
+  },
+  "research fellow.pdf": {
+    "occupation": "Research fellow",
+    "occupation_slug": "Research-Fellow",
+    "field": "Science",
+    "field_basis": "inferred from occupation (research role)"
+  },
+  "US agent ineligibility.pdf": {
+    "occupation": "Skeet-shooting competitor",
+    "occupation_slug": "Skeet-Shooting-Competitor",
+    "field": "Athletics",
+    "field_basis": "inferred from decision text (skeet-shooting competitor)",
+    "notes": "Decided on U.S. agent petitioning eligibility and contract sufficiency; no criterion analysis."
+  },
+  "US agent ineligibility 2.pdf": {
+    "occupation": "Not stated in decision",
+    "occupation_slug": "Occupation-Not-Stated",
+    "field": "_Review_Needed",
+    "field_basis": "no field of endeavor stated; one-page dismissal",
+    "notes": "Appeal dismissed as moot after a separate petition was approved; no field or criterion analysis."
+  },
+  "ballroom academy.pdf": {
+    "occupation": "Ballroom dance teacher",
+    "occupation_slug": "Ballroom-Dance-Teacher",
+    "field": "_Review_Needed",
+    "field_basis": "adjudicated as extraordinary ability in the arts (O-1B), outside O-1A scope",
+    "notes": "Revocation case decided under the O-1B arts criteria at 8 CFR 214.2(o)(3)(iv); retained for contrast only."
+  },
+  "Tennis director awards and membership.pdf": {
+    "field": "Athletics",
+    "field_basis": "stated in decision (classification sought in athletics)",
+    "notes": "The decision also discusses the petitioner's misplaced reliance on the O-1B arts criteria."
+  },
+  "ballroom dancer.pdf": {
+    "occupation": "Dancesport (competitive ballroom) professional",
+    "occupation_slug": "Dancesport-Professional",
+    "field": "Athletics",
+    "field_basis": "stated in decision (classification requested in athletics)"
+  },
+  "soccer coach.pdf": {
+    "occupation": "Goalkeeper program director",
+    "occupation_slug": "Goalkeeper-Program-Director",
+    "field": "Athletics",
+    "field_basis": "inferred from occupation (youth soccer club)"
+  },
+  "coach.pdf": {
+    "occupation": "Assistant coach (sport redacted in decision)",
+    "occupation_slug": "Assistant-Coach",
+    "field": "Athletics"
+  },
+  "coach philippino.pdf": {
+    "occupation": "Martial arts coach (discipline redacted in decision)",
+    "occupation_slug": "Martial-Arts-Coach",
+    "field": "Athletics"
+  },
+  "coach3.pdf": {
+    "occupation": "Basketball player and coach",
+    "occupation_slug": "Basketball-Player-Coach",
+    "field": "Athletics"
+  },
+  "MMA instructor.pdf": {
+    "occupation": "Mixed martial arts instructor",
+    "occupation_slug": "MMA-Instructor",
+    "field": "Athletics"
+  },
+  "Executive director and journalisyt.pdf": {
+    "occupation": "Executive editor and journalist",
+    "occupation_slug": "Executive-Editor-Journalist",
+    "field": "Business",
+    "field_basis": "stated in decision"
+  },
+  "Marketing specialist no criteria discussion.pdf": {
+    "occupation": "Investment and marketing specialist",
+    "occupation_slug": "Investment-Marketing-Specialist",
+    "field": "Business",
+    "field_basis": "inferred from occupation",
+    "notes": "Summary dismissal; the decision contains no substantive criterion analysis."
+  },
+  "stallion manager.pdf": {
+    "petitioner_description": "horse breeding business (name redacted)",
+    "field": "Athletics",
+    "field_basis": "stated in decision"
+  },
+  "tennis coach.pdf": {
+    "petitioner_description": "financial services and sports management business"
+  },
+  "auto mechanic published judging.pdf": {
+    "occupation": "Master automotive technician and test driver",
+    "occupation_slug": "Automotive-Technician",
+    "field": "Business",
+    "field_basis": "inferred from occupation (no field stated in decision)"
+  },
+  "Assistant coach soccer published material, judging, high salary.pdf": {
+    "occupation": "Assistant soccer coach (under-16/under-18)",
+    "occupation_slug": "Assistant-Soccer-Coach",
+    "field": "Athletics"
+  },
+  "physicist totality determination.pdf": {
+    "occupation": "Physicist",
+    "occupation_slug": "Physicist",
+    "field": "Science",
+    "field_basis": "curator classification by occupation (physicist at a university)",
+    "notes": "The decision itself was sought and adjudicated as extraordinary ability in business; filed under Science because the occupation and evidence are scientific."
+  },
+  "Sr software development engineer.pdf": {
+    "occupation": "Senior software development engineer",
+    "occupation_slug": "Software-Development-Engineer",
+    "field": "Science",
+    "field_basis": "inferred from occupation (engineering role; no field stated in decision)"
+  },
+  "O-1 agent.pdf": {
+    "occupation": "Animal science researcher",
+    "occupation_slug": "Animal-Science-Researcher",
+    "field": "Science",
+    "notes": "Decided on U.S. agent petitioning requirements rather than the evidentiary criteria."
+  },
+  "MMA trainer renewal.pdf": {
+    "occupation": "Mixed martial arts athletic trainer",
+    "occupation_slug": "MMA-Athletic-Trainer",
+    "field": "Athletics"
+  },
+  "fraud bodybuild.pdf": {
+    "occupation": "Bodybuilder",
+    "occupation_slug": "Bodybuilder",
+    "field": "Athletics"
+  },
+  "webcam bodybuilder.pdf": {
+    "occupation": "Bodybuilder",
+    "occupation_slug": "Bodybuilder",
+    "field": "Athletics"
+  },
+  "school counselor.pdf": {
+    "occupation": "School and career counselor",
+    "occupation_slug": "School-Career-Counselor",
+    "field": "Education",
+    "field_basis": "stated in decision"
+  },
+  "Vice President.pdf": {
+    "occupation": "Financial vice president",
+    "occupation_slug": "Financial-Vice-President",
+    "field": "Business"
+  },
+  "Senior Vice President memberships .pdf": {
+    "occupation": "Senior vice president of production finance",
+    "occupation_slug": "SVP-Production-Finance",
+    "field": "Business"
+  },
+  "production finance.pdf": {
+    "occupation": "Senior vice president of production finance",
+    "occupation_slug": "SVP-Production-Finance",
+    "field": "Business",
+    "notes": "Decision on a motion to reopen/reconsider the earlier AAO decision in the same matter."
+  },
+  "startup mentor.pdf": {
+    "occupation": "Senior iOS developer",
+    "occupation_slug": "Senior-iOS-Developer",
+    "field": "Science",
+    "field_basis": "curator classification by occupation (software engineering)",
+    "notes": "The decision itself was sought and adjudicated as extraordinary ability in business; filed under Science because the occupation is a software engineering role."
+  },
+  "Russian banker consultation.pdf": {
+    "occupation": "External managers evaluation specialist",
+    "occupation_slug": "Investment-Evaluation-Specialist",
+    "field": "Business"
+  },
+  "CEO culinary business.pdf": {
+    "occupation": "Chief executive officer",
+    "occupation_slug": "Chief-Executive-Officer",
+    "field": "Business"
+  },
+  "bridge erosion.pdf": {
+    "occupation": "Research engineer (bridge scour and erosion)",
+    "occupation_slug": "Research-Engineer",
+    "field": "Science"
+  },
+  "ophtalmologist.pdf": {
+    "occupation": "Ophthalmology specialist",
+    "occupation_slug": "Ophthalmology-Specialist",
+    "field": "Science"
+  },
+  "Cardiology fellow.pdf": {
+    "occupation": "Cardiology fellow",
+    "occupation_slug": "Cardiology-Fellow",
+    "field": "Science"
+  },
+  "badm coach.pdf": {
+    "occupation": "Badminton coach",
+    "occupation_slug": "Badminton-Coach",
+    "field": "Athletics",
+    "notes": "Two-page summary dismissal; criterion findings are limited."
+  }
+}

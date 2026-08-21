@@ -12,7 +12,7 @@ from typing import Any, Iterator, Optional
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from .config import OLLAMA_HOST, OLLAMA_MODEL
+from .config import OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_NUM_CTX, OLLAMA_TIMEOUT
 
 _SSL_ENV_KEYS = ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
 
@@ -74,14 +74,14 @@ def chat_json(
         "format": "json",
         "options": {
             "temperature": temperature,
-            "num_ctx": 16384,
+            "num_ctx": OLLAMA_NUM_CTX,
         },
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
     }
-    with _client(base_url=host, timeout=300.0) as client:
+    with _client(base_url=host, timeout=OLLAMA_TIMEOUT) as client:
         resp = client.post("/api/chat", json=payload)
         if resp.status_code >= 400:
             raise OllamaError(f"Ollama chat failed ({resp.status_code}): {resp.text[:500]}")

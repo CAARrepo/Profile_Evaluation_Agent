@@ -51,9 +51,9 @@ Reads Intake JSON, detects visa category, and uses a **local Ollama LLM** to rea
 
 | Category | Knowledge base |
 |----------|----------------|
-| O-1A | `knowledge_base/O1A_evaluation_knowledge_base.json` |
-| EB-1A | `knowledge_base/EB1A_evaluation_knowledge_base.json` |
-| EB-2 NIW | `knowledge_base/EB2_NIW_evaluation_knowledge_base.json` |
+| O-1A | `knowledge_base/O1A_Knowledge_Base/O1A_evaluation_knowledge_base.json` |
+| EB-1A | `knowledge_base/EB1A_Knowledge_Base/EB1A_evaluation_knowledge_base.json` |
+| EB-2 NIW | `knowledge_base/EB2NIW_Knowledge_Base/EB2_NIW_evaluation_knowledge_base.json` |
 
 ```bash
 # Ensure Ollama is running and model is pulled
@@ -112,10 +112,50 @@ pytest -q
 | `datasets/User_Info.csv` | Lead identity + immigration category |
 | `datasets/Detailed_questionarie.csv` | Questionnaire answers |
 | `datasets/lead-documents/<lead_id>/` | Optional uploads |
-| `knowledge_base/*.json` | Evaluation rules (do not modify) |
+| `knowledge_base/<CAT>_Knowledge_Base/` | Per-category material: evaluation rules, controlling sources, AAO decisions |
+| `knowledge_base/<CAT>_Knowledge_Base_original/` | Untouched archive copies (never modify) |
 | `intake_outputs/` | Intake Agent JSON |
 | `evaluation_outputs/` | Evaluation Agent JSON |
 | `report_outputs/` | Initial user reports (Markdown + JSON) |
+
+### Knowledge base layout
+
+Each category folder holds material separated by legal authority:
+
+```
+knowledge_base/O1A_Knowledge_Base/
+├── O1A_evaluation_knowledge_base.json     evaluation rules (loaded at runtime)
+├── 00_Catalog/                            metadata for the AAO decisions
+├── 01_Controlling_Sources/
+│   ├── CFR/                               binding regulation
+│   └── USCIS_Policy_Manual/               USCIS policy guidance
+└── 02_AAO_Non_Precedent_Decisions/        51 decisions, filed by field
+```
+
+`EB1A_Knowledge_Base/` and `EB2NIW_Knowledge_Base/` follow the same pattern but
+currently have `01_Controlling_Sources/` only; no AAO decisions are collected
+for them yet. Every `*_Knowledge_Base_original/` folder is a read-only archive.
+
+Accessors live in `evaluation_agent/kb_loader.py`:
+
+```python
+from evaluation_agent.kb_loader import (
+    load_knowledge_base, load_controlling_sources, find_aao_decisions,
+    aao_decision_pdf, aao_authority_label,
+)
+
+sources = load_controlling_sources("EB-2 NIW")     # {"cfr": [...], "policy_manual": [...]}
+hits = find_aao_decisions(                          # illustrative only, non-binding
+    "O-1A", criterion="Original contributions", determination="rejected",
+    field="Science", limit=3,
+)
+pdf = aao_decision_pdf("O-1A", hits[0])
+```
+
+AAO decisions are **non-precedent and non-binding**; surface them with
+`aao_authority_label()` and cite CFR or the Policy Manual for the legal
+standard. They are available to code but are not injected into evaluation
+prompts, so evaluation output is unchanged by their presence.
 
 ## Notes
 

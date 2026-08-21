@@ -1,2 +1,9 @@
 datasets/
 *_outputs/
+report_outputs_old/
+knowledge_base/
+__pycache__/
+*.pyc
+run_logs/
+Desktop.lnk
+tools/_aao_text/
