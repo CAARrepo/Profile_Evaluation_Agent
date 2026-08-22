@@ -69,6 +69,7 @@ class NIWEvaluator(BaseEvaluator):
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
             "underlying_eb2_status": underlying.status,
             "prong_statuses": {p.prong_id: p.status for p in prongs},
+            "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
         }
         return result
 

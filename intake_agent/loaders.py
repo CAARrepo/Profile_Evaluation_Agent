@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
+from .category import detect_intake_category
 from .config import LEAD_DOCUMENTS_DIR, QUESTIONNAIRE_CSV, USER_INFO_CSV
 from .extractors import extract_text
 from .schema import CaseBundle
@@ -42,8 +43,13 @@ def load_questionnaires(path: Path = QUESTIONNAIRE_CSV) -> dict[str, dict[str, A
 
 
 def list_o1_leads(path: Path = USER_INFO_CSV) -> list[dict[str, str]]:
-    """Leads tagged O1_VISA in export data (evaluated as O-1A in this pipeline)."""
-    return [r for r in load_leads(path) if (r.get("immigration_category") or "").upper() == "O1_VISA"]
+    """Leads tagged O-1A / O1_VISA in export data."""
+    return [r for r in load_leads(path) if detect_intake_category(r) == "O-1A"]
+
+
+def list_supported_leads(path: Path = USER_INFO_CSV) -> list[dict[str, str]]:
+    """Leads tagged O-1A, EB-1A, or EB-2 NIW in export data."""
+    return [r for r in load_leads(path) if detect_intake_category(r)]
 
 
 def _hydrate_onedrive_file(path: Path) -> None:
@@ -116,26 +122,46 @@ def load_case(
     return CaseBundle(lead=leads[lead_id], questionnaire=q, document_texts=docs)
 
 
+def pick_sample_lead(
+    *,
+    prefer_completed: bool = True,
+    require_docs: bool = True,
+    visa_category: str | None = None,
+) -> Optional[str]:
+    """Choose a good supported lead for local testing (any of O-1A / EB-1A / EB-2 NIW)."""
+    questionnaires = load_questionnaires()
+    leads = list_supported_leads()
+    if visa_category:
+        leads = [r for r in leads if detect_intake_category(r) == visa_category]
+
+    def _ok(lead: dict[str, str], *, require_docs_flag: bool) -> bool:
+        lead_id = lead["id"]
+        if lead_id not in questionnaires:
+            return False
+        if require_docs_flag and not collect_lead_documents(lead_id):
+            return False
+        return True
+
+    if prefer_completed:
+        for lead in leads:
+            if (lead.get("questionnaire_status") or "").lower() != "completed":
+                continue
+            if _ok(lead, require_docs_flag=require_docs):
+                return lead["id"]
+    for lead in leads:
+        if _ok(lead, require_docs_flag=require_docs):
+            return lead["id"]
+    return None
+
+
 def pick_sample_o1_lead(
     *,
     prefer_completed: bool = True,
     require_docs: bool = True,
 ) -> Optional[str]:
     """Choose a good O-1A lead for local testing."""
-    questionnaires = load_questionnaires()
-    for lead in list_o1_leads():
-        lead_id = lead["id"]
-        if prefer_completed and (lead.get("questionnaire_status") or "").lower() != "completed":
-            continue
-        if lead_id not in questionnaires:
-            continue
-        if require_docs and not collect_lead_documents(lead_id):
-            continue
-        return lead_id
-    # Fallback: any O-1A lead with questionnaire
-    for lead in list_o1_leads():
-        if lead["id"] in questionnaires:
-            if require_docs and not collect_lead_documents(lead["id"]):
-                continue
-            return lead["id"]
-    return None
+    return pick_sample_lead(
+        prefer_completed=prefer_completed,
+        require_docs=require_docs,
+        visa_category="O-1A",
+    )

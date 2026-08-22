@@ -25,8 +25,9 @@ CATEGORIES = ["O-1A", "EB-1A", "EB-2 NIW"]
 def test_kb_resolves_inside_category_folder(category: str):
     path = _resolve_kb_path(category)
     assert path.is_file()
-    # Runtime must read the curated folder, not the read-only archive.
-    assert path.parent == kb_home(category)
+    assert "01_Controlling_Sources" in path.parts
+    assert "CFR" in path.parts
+    assert path.parent.parent.parent == kb_home(category)
     assert not path.parent.name.endswith("_original")
 
 
@@ -93,4 +94,38 @@ def test_every_catalogued_pdf_exists():
 def test_knowledge_base_sections_still_load():
     for category in CATEGORIES:
         kb = load_knowledge_base(category)
-        assert kb["knowledge_base_metadata"]["version"]
+        assert kb["knowledge_base_metadata"]["runtime_source"] == "01_Controlling_Sources"
+        assert kb["knowledge_base_metadata"]["cfr_files"]
+        assert kb["knowledge_base_metadata"]["policy_manual_files"]
+
+
+def test_o1a_runtime_kb_merges_cfr_and_policy_manual():
+    from evaluation_agent.kb_loader import category_section
+
+    kb = load_knowledge_base("O-1A")
+    section = category_section(kb, "O-1A")
+    criteria = section["criteria"]
+    assert len(criteria) == 8
+    awards = next(c for c in criteria if c["criterion_id"] == "o1a_awards")
+    assert awards["required_elements"]  # from CFR
+    assert awards["strong_examples"]  # from Policy Manual
+    assert section["final_merits_factors"]
+
+
+def test_eb1a_runtime_kb_has_ten_criteria():
+    from evaluation_agent.kb_loader import category_section
+
+    section = category_section(load_knowledge_base("EB-1A"), "EB-1A")
+    assert len(section["criteria"]) == 10
+    assert section["final_merits_analysis"]["central_question"]
+
+
+def test_niw_runtime_kb_has_underlying_eb2_and_three_prongs():
+    from evaluation_agent.kb_loader import category_section
+
+    section = category_section(load_knowledge_base("EB-2 NIW"), "EB-2 NIW")
+    ea = section["part_1_underlying_EB2"]["exceptional_ability_path"]["criteria"]
+    assert len(ea) == 6
+    assert ea[0]["required_elements"]
+    prongs = section["part_2_NIW_three_prongs"]["prongs"]
+    assert len(prongs) == 3

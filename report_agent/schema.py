@@ -40,6 +40,15 @@ class ClientReportContent(BaseModel):
     information_still_needed: list[str] = Field(default_factory=list)
     priority_evidence_checklist: list[str] = Field(default_factory=list)
     recommended_next_steps: list[str] = Field(default_factory=list)
+    firm_approval_rate_line: str = ""
+    firm_results_disclosure: str = ""
+    firm_case_study_heading: str = ""
+    firm_case_study_title: str = ""
+    firm_case_study_paragraphs: list[str] = Field(default_factory=list)
+    firm_case_study_image: str = ""
+    firm_case_study_image_caption: str = ""
+    firm_timeline_heading: str = ""
+    firm_timeline_items: list[str] = Field(default_factory=list)
     footer_text: str = ""
 
 

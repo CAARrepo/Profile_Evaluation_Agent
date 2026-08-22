@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .category import detect_intake_category
 from .config import (
     MAX_DOCUMENT_CHARS,
     OLLAMA_HOST,
@@ -14,41 +15,45 @@ from .config import (
 )
 from .loaders import load_case
 from .llm import chat_json, ensure_model_available
-from .prompts import SYSTEM_PROMPT, build_user_prompt
+from .prompts import build_user_prompt, criteria_keys_for, system_prompt
 from .schema import (
     ApplicantIdentity,
     CaseBundle,
     CriterionIntake,
     EvidenceItem,
     EvidenceStatus,
+    IntakeCriterionKey,
     InformationGap,
-    O1CriterionKey,
     StandardizedProfile,
 )
 from .url_fetch import collect_applicant_urls, fetch_applicant_urls
 
 
 CRITERION_FIELD_MAP = {
-    "awards": O1CriterionKey.AWARDS,
-    "memberships": O1CriterionKey.MEMBERSHIPS,
-    "media": O1CriterionKey.MEDIA,
-    "peerReview": O1CriterionKey.PEER_REVIEW,
-    "peer_review": O1CriterionKey.PEER_REVIEW,
-    "judging": O1CriterionKey.JUDGING,
-    "patents": O1CriterionKey.PATENTS,
-    "publications": O1CriterionKey.PUBLICATIONS,
-    "criticalRole": O1CriterionKey.CRITICAL_ROLE,
-    "critical_role": O1CriterionKey.CRITICAL_ROLE,
-    "highSalary": O1CriterionKey.HIGH_SALARY,
-    "high_salary": O1CriterionKey.HIGH_SALARY,
-    "conferences": O1CriterionKey.CONFERENCES,
-    "googleScholar": O1CriterionKey.GOOGLE_SCHOLAR,
-    "google_scholar": O1CriterionKey.GOOGLE_SCHOLAR,
+    "awards": IntakeCriterionKey.AWARDS,
+    "memberships": IntakeCriterionKey.MEMBERSHIPS,
+    "media": IntakeCriterionKey.MEDIA,
+    "peerReview": IntakeCriterionKey.PEER_REVIEW,
+    "peer_review": IntakeCriterionKey.PEER_REVIEW,
+    "judging": IntakeCriterionKey.JUDGING,
+    "patents": IntakeCriterionKey.PATENTS,
+    "publications": IntakeCriterionKey.PUBLICATIONS,
+    "criticalRole": IntakeCriterionKey.CRITICAL_ROLE,
+    "critical_role": IntakeCriterionKey.CRITICAL_ROLE,
+    "highSalary": IntakeCriterionKey.HIGH_SALARY,
+    "high_salary": IntakeCriterionKey.HIGH_SALARY,
+    "conferences": IntakeCriterionKey.CONFERENCES,
+    "googleScholar": IntakeCriterionKey.GOOGLE_SCHOLAR,
+    "google_scholar": IntakeCriterionKey.GOOGLE_SCHOLAR,
+    "artistic_display": IntakeCriterionKey.ARTISTIC_DISPLAY,
+    "artisticDisplay": IntakeCriterionKey.ARTISTIC_DISPLAY,
+    "commercial_success": IntakeCriterionKey.COMMERCIAL_SUCCESS,
+    "commercialSuccess": IntakeCriterionKey.COMMERCIAL_SUCCESS,
 }
 
 _URL_SOURCE_TO_CRITERION = {
-    "google_scholar": O1CriterionKey.GOOGLE_SCHOLAR,
-    "media": O1CriterionKey.MEDIA,
+    "google_scholar": IntakeCriterionKey.GOOGLE_SCHOLAR,
+    "media": IntakeCriterionKey.MEDIA,
 }
 
 
@@ -143,10 +148,13 @@ def seed_identity(bundle: CaseBundle) -> ApplicantIdentity:
     )
 
 
-def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake]:
+def seed_criteria_from_questionnaire(
+    bundle: CaseBundle,
+    visa_category: str = "",
+) -> list[CriterionIntake]:
     section_b = _answers(bundle).get("sectionB") or {}
     raw = section_b.get("criteria") or {}
-    seeded: dict[O1CriterionKey, CriterionIntake] = {}
+    seeded: dict[IntakeCriterionKey, CriterionIntake] = {}
 
     for key, criterion_key in CRITERION_FIELD_MAP.items():
         if key not in raw:
@@ -199,12 +207,16 @@ def seed_criteria_from_questionnaire(bundle: CaseBundle) -> list[CriterionIntake
             notes=notes,
         )
 
-    # Ensure all criteria appear in the profile
-    for key in O1CriterionKey:
+    required = []
+    for key_name in criteria_keys_for(visa_category):
+        required.append(IntakeCriterionKey(key_name))
+    for key in required:
         if key not in seeded:
-            seeded[key] = CriterionIntake(key=key, applicant_answer="unknown", evidence_status=EvidenceStatus.MISSING)
+            seeded[key] = CriterionIntake(
+                key=key, applicant_answer="unknown", evidence_status=EvidenceStatus.MISSING
+            )
 
-    return [seeded[k] for k in O1CriterionKey]
+    return [seeded[k] for k in required]
 
 
 def deterministic_information_gaps(
@@ -281,10 +293,17 @@ def merge_profiles(
             raw_model_notes=json.dumps(llm_data)[:4000],
         )
 
-    # Keep authoritative identity from CSV/questionnaire
+    # Keep authoritative identity / category from CSV
     llm_profile.case_id = seeded.case_id
     llm_profile.identity = seeded.identity
+    llm_profile.visa_category = seeded.visa_category
     llm_profile.documents_processed = seeded.documents_processed or llm_profile.documents_processed
+    if not llm_profile.proposed_endeavor:
+        llm_profile.proposed_endeavor = seeded.proposed_endeavor
+    if not llm_profile.national_importance_summary:
+        llm_profile.national_importance_summary = seeded.national_importance_summary
+    if seeded.visa_category == "EB-2 NIW" and not llm_profile.proposed_endeavor:
+        llm_profile.proposed_endeavor = llm_profile.field_of_endeavor or seeded.field_of_endeavor
 
     # Prefer seeded evidence index when LLM omits URL/document refs
     if not llm_profile.evidence_index:
@@ -356,7 +375,8 @@ class IntakeAgent:
 
     def build_seed_profile(self, bundle: CaseBundle) -> StandardizedProfile:
         identity = seed_identity(bundle)
-        criteria = seed_criteria_from_questionnaire(bundle)
+        visa_category = detect_intake_category(bundle.lead)
+        criteria = seed_criteria_from_questionnaire(bundle, visa_category)
         _attach_url_evidence(criteria, bundle.url_texts)
         info_gaps = deterministic_information_gaps(bundle, identity, criteria)
         docs = [d.get("filename") or d.get("path") or "" for d in bundle.document_texts]
@@ -377,8 +397,9 @@ class IntakeAgent:
                 claims.append(f"Fetched URL ({label}): {excerpt}")
 
         name = f"{identity.first_name} {identity.last_name}".strip()
+        label = visa_category or (identity.immigration_category or "visa")
         summary = (
-            f"O-1A intake for {name or identity.lead_id}. "
+            f"{label} intake for {name or identity.lead_id}. "
             f"Status={identity.current_status or 'unknown'}; "
             f"docs={len(docs)}; "
             f"fetched_urls={len(bundle.url_texts)}; "
@@ -403,6 +424,7 @@ class IntakeAgent:
         return StandardizedProfile(
             case_id=identity.lead_id,
             identity=identity,
+            visa_category=visa_category,
             summary=summary,
             criteria=criteria,
             claims=claims,
@@ -422,14 +444,16 @@ class IntakeAgent:
             return seeded
 
         ensure_model_available(self.model, self.host)
+        category = detect_intake_category(bundle.lead)
         llm_data = chat_json(
-            system=SYSTEM_PROMPT,
-            user=build_user_prompt(bundle),
+            system=system_prompt(category),
+            user=build_user_prompt(bundle, visa_category=category),
             model=self.model,
             host=self.host,
         )
         # Force case/identity consistency
         llm_data["case_id"] = seeded.case_id
+        llm_data["visa_category"] = category
         if "identity" not in llm_data or not isinstance(llm_data["identity"], dict):
             llm_data["identity"] = seeded.identity.model_dump()
         else:

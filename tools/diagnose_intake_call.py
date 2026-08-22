@@ -26,7 +26,8 @@ from intake_agent.config import (  # noqa: E402
     OLLAMA_NUM_CTX,
 )
 from intake_agent.loaders import load_case  # noqa: E402
-from intake_agent.prompts import SYSTEM_PROMPT, build_user_prompt  # noqa: E402
+from intake_agent.prompts import build_user_prompt, system_prompt  # noqa: E402
+from intake_agent.category import detect_intake_category  # noqa: E402
 
 
 def main() -> int:
@@ -38,7 +39,8 @@ def main() -> int:
 
     bundle = load_case(args.lead_id, max_doc_chars=MAX_DOCUMENT_CHARS)
     enrich_bundle_with_urls(bundle)
-    user = build_user_prompt(bundle)
+    category = detect_intake_category(bundle.lead)
+    user = build_user_prompt(bundle, visa_category=category)
     print(f"prompt chars={len(user)} | num_ctx={OLLAMA_NUM_CTX} | cap={args.max_tokens} tokens\n")
 
     payload = {
@@ -51,7 +53,7 @@ def main() -> int:
             "num_predict": args.max_tokens,
         },
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt(category)},
             {"role": "user", "content": user},
         ],
     }

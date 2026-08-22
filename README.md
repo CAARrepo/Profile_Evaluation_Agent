@@ -35,11 +35,12 @@ Env name: **`profile-evaluation`** (Python 3.11)
 
 ## Intake Agent
 
-Organizes questionnaire + optional docs into `intake_outputs/<lead_id>_intake.json`.
+Organizes questionnaire + optional docs into `intake_outputs/<lead_id>_intake.json` for **O-1A, EB-1A, and EB-2 NIW**. Category comes from `User_Info.csv` `immigration_category`.
 
 MVP rules: assume Yes-claims true; no follow-up questions; missing docs → `information_gaps` only (never blocks).
 
 ```bash
+python -m intake_agent list-leads
 python -m intake_agent list-o1
 python -m intake_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136
 python -m intake_agent run --no-llm --lead-id 00b14135-8fa0-4525-a88d-21605f615136
@@ -51,9 +52,9 @@ Reads Intake JSON, detects visa category, and uses a **local Ollama LLM** to rea
 
 | Category | Knowledge base |
 |----------|----------------|
-| O-1A | `knowledge_base/O1A_Knowledge_Base/O1A_evaluation_knowledge_base.json` |
-| EB-1A | `knowledge_base/EB1A_Knowledge_Base/EB1A_evaluation_knowledge_base.json` |
-| EB-2 NIW | `knowledge_base/EB2NIW_Knowledge_Base/EB2_NIW_evaluation_knowledge_base.json` |
+| O-1A | `knowledge_base/O1A_Knowledge_Base/01_Controlling_Sources/` |
+| EB-1A | `knowledge_base/EB1A_Knowledge_Base/01_Controlling_Sources/` |
+| EB-2 NIW | `knowledge_base/EB2NIW_Knowledge_Base/01_Controlling_Sources/` |
 
 ```bash
 # Ensure Ollama is running and model is pulled
@@ -112,7 +113,7 @@ pytest -q
 | `datasets/User_Info.csv` | Lead identity + immigration category |
 | `datasets/Detailed_questionarie.csv` | Questionnaire answers |
 | `datasets/lead-documents/<lead_id>/` | Optional uploads |
-| `knowledge_base/<CAT>_Knowledge_Base/` | Per-category material: evaluation rules, controlling sources, AAO decisions |
+| `knowledge_base/<CAT>_Knowledge_Base/` | Per-category material. Runtime reads `01_Controlling_Sources/` only |
 | `knowledge_base/<CAT>_Knowledge_Base_original/` | Untouched archive copies (never modify) |
 | `intake_outputs/` | Intake Agent JSON |
 | `evaluation_outputs/` | Evaluation Agent JSON |
@@ -124,9 +125,8 @@ Each category folder holds material separated by legal authority:
 
 ```
 knowledge_base/O1A_Knowledge_Base/
-├── O1A_evaluation_knowledge_base.json     evaluation rules (loaded at runtime)
 ├── 00_Catalog/                            metadata for the AAO decisions
-├── 01_Controlling_Sources/
+├── 01_Controlling_Sources/                loaded at evaluation runtime
 │   ├── CFR/                               binding regulation
 │   └── USCIS_Policy_Manual/               USCIS policy guidance
 └── 02_AAO_Non_Precedent_Decisions/        51 decisions, filed by field
@@ -135,6 +135,13 @@ knowledge_base/O1A_Knowledge_Base/
 `EB1A_Knowledge_Base/` and `EB2NIW_Knowledge_Base/` follow the same pattern but
 currently have `01_Controlling_Sources/` only; no AAO decisions are collected
 for them yet. Every `*_Knowledge_Base_original/` folder is a read-only archive.
+
+`load_knowledge_base()` merges the CFR criteria with Policy Manual evidence
+guidance. The older `*_evaluation_knowledge_base.json` files are not read.
+For O-1A only, each criterion prompt may include up to two **catalog cards**
+from `00_Catalog/` (occupation, accepted/rejected, one quote + page). Those
+cards are labeled non-precedent and are not the legal test. Full AAO PDFs
+are not loaded.
 
 Accessors live in `evaluation_agent/kb_loader.py`:
 

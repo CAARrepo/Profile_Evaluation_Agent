@@ -15,9 +15,10 @@ Rules (strict):
 3. Do NOT fail a criterion solely because supporting documents were not uploaded. Missing documents belong in information_gaps / recommended_evidence.
 4. Do NOT ask the applicant follow-up questions. Record gaps instead.
 5. Ground your reasoning in the provided knowledge-base criterion fields (required_elements, strong/weak examples, recommended evidence).
-6. Return status as exactly one of: strong | potential | weak | not_indicated | not_applicable
-7. Return confidence as exactly one of: high | medium | low
-8. Output VALID JSON only matching the requested schema. No markdown fences.
+6. If aao_illustrative_examples are present, they are NON-PRECEDENT and NON-BINDING. Do NOT copy their outcomes. Do NOT treat them as the legal test. Use them only to see how similar evidence was weighed. Score only against required_elements.
+7. Return status as exactly one of: strong | potential | weak | not_indicated | not_applicable
+8. Return confidence as exactly one of: high | medium | low
+9. Output VALID JSON only matching the requested schema. No markdown fences.
 """
 
 
@@ -31,11 +32,14 @@ def build_criterion_user_prompt(
     profile_context: list[str] | None = None,
     occupation_note: str | None = None,
     kb_principles: dict[str, Any] | None = None,
+    aao_illustrative_examples: list[dict[str, Any]] | None = None,
 ) -> str:
     payload = {
         "task": (
             "Evaluate this single visa criterion for a preliminary profile assessment. "
-            "Reason about the applicant facts against the knowledge-base required elements."
+            "Reason about the applicant facts against the knowledge-base required elements. "
+            "If aao_illustrative_examples are included, they are non-precedent illustrations "
+            "only — do not copy those case outcomes and do not treat them as the legal test."
         ),
         "visa_category": visa_category,
         "dominant_applicant_answer": dominant_answer,
@@ -64,6 +68,13 @@ def build_criterion_user_prompt(
             "no_follow_up_questions": True,
             **(kb_principles or {}),
         },
+        "aao_illustrative_examples": aao_illustrative_examples or [],
+        "aao_authority": (
+            "AAO non-precedent—non-binding. Illustrative only. "
+            "CFR and the USCIS Policy Manual are the legal test."
+            if aao_illustrative_examples
+            else ""
+        ),
         "output_schema": {
             "status": "strong|potential|weak|not_indicated|not_applicable",
             "confidence": "high|medium|low",

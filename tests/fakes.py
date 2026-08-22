@@ -22,6 +22,7 @@ class FakeJudge:
         profile_context: Optional[list[str]] = None,
         occupation_note: Optional[str] = None,
         kb_principles: Optional[dict[str, Any]] = None,
+        aao_illustrative_examples: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         cid = str(criterion.get("criterion_id") or "")
         note = (occupation_note or "").lower()

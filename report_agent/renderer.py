@@ -223,7 +223,44 @@ def render_markdown(
         lines.extend([f"- {e}" for e in client.priority_evidence_checklist])
         lines.append("")
 
-    lines.extend(["## 7. Recommended Next Steps", ""])
+    if client.firm_approval_rate_line or client.firm_results_disclosure:
+        lines.extend(["## 7. Past Results in This Category", ""])
+        if client.firm_approval_rate_line:
+            lines.append(client.firm_approval_rate_line)
+            lines.append("")
+        if client.firm_results_disclosure:
+            lines.append(f"*{client.firm_results_disclosure}*")
+            lines.append("")
+
+    if client.firm_case_study_title or client.firm_case_study_paragraphs:
+        lines.extend(["## 8. Example of an Approved Case in This Category", ""])
+        if client.firm_case_study_heading:
+            lines.append(f"**{client.firm_case_study_heading}**")
+            lines.append("")
+        if client.firm_case_study_title:
+            lines.append(f"### {client.firm_case_study_title}")
+            lines.append("")
+        for para in client.firm_case_study_paragraphs:
+            if para.startswith("## "):
+                lines.append(f"### {para[3:]}")
+            else:
+                lines.append(para)
+            lines.append("")
+
+        if client.firm_case_study_image_caption or client.firm_case_study_image:
+            caption = client.firm_case_study_image_caption or "Approval notice"
+            lines.append(f"*[{caption}]*")
+            lines.append("")
+
+    if client.firm_timeline_items:
+        lines.extend(["## 9. Preparation and Processing Timeline", ""])
+        if client.firm_timeline_heading:
+            lines.append(f"**{client.firm_timeline_heading}**")
+            lines.append("")
+        lines.extend([f"- {item}" for item in client.firm_timeline_items])
+        lines.append("")
+
+    lines.extend(["## 10. Recommended Next Steps", ""])
     for i, step in enumerate(client.recommended_next_steps, start=1):
         lines.append(f"{i}. {step}")
     lines.append("")

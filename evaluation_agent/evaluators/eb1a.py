@@ -89,5 +89,6 @@ class EB1AEvaluator(BaseEvaluator):
             "ollama_model": self.model,
             "two_step_evaluation": self.section.get("two_step_evaluation"),
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
+            "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
         }
         return result

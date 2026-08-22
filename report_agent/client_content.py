@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from .config import DEFAULT_DISCLAIMER
+from .firm_inserts import load_category_inserts
 from .schema import ClientCriterionRow, ClientReportContent, InitialReport
 from .text_utils import (
     client_criterion_explanation,
@@ -127,6 +128,8 @@ def build_client_content(
             + " This document has not been reviewed by an attorney and is not legal advice."
         )
 
+    inserts = load_category_inserts(category)
+
     return ClientReportContent(
         document_title=title,
         applicant_name=report.applicant_name or "Applicant",
@@ -148,5 +151,14 @@ def build_client_content(
         information_still_needed=info_needed,
         priority_evidence_checklist=priority_evidence,
         recommended_next_steps=next_steps,
+        firm_approval_rate_line=inserts.get("approval_rate_line", ""),
+        firm_results_disclosure=inserts.get("disclosure", ""),
+        firm_case_study_heading=inserts.get("case_study_heading", ""),
+        firm_case_study_title=inserts.get("case_study_title", ""),
+        firm_case_study_paragraphs=list(inserts.get("case_study_paragraphs") or []),
+        firm_case_study_image=inserts.get("case_study_image", ""),
+        firm_case_study_image_caption=inserts.get("case_study_image_caption", ""),
+        firm_timeline_heading=inserts.get("timeline_heading", ""),
+        firm_timeline_items=list(inserts.get("timeline_items") or []),
         footer_text="",
     )

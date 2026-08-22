@@ -29,9 +29,9 @@ from evaluation_agent.prompts import (  # noqa: E402
 from evaluation_agent.scoring import collect_mapped_facts  # noqa: E402
 from intake_agent.agent import enrich_bundle_with_urls  # noqa: E402
 from intake_agent.config import MAX_DOCUMENT_CHARS  # noqa: E402
+from intake_agent.category import detect_intake_category  # noqa: E402
 from intake_agent.loaders import load_case  # noqa: E402
-from intake_agent.prompts import SYSTEM_PROMPT as INTAKE_SYSTEM  # noqa: E402
-from intake_agent.prompts import build_user_prompt  # noqa: E402
+from intake_agent.prompts import build_user_prompt, system_prompt  # noqa: E402
 from intake_agent.schema import StandardizedProfile  # noqa: E402
 
 HOST = "http://127.0.0.1:11434"
@@ -133,11 +133,13 @@ def measure_intake(lead_id: str) -> dict[str, Any]:
           f" | fetch failures: {len(bundle.url_fetch_failures or [])}")
 
     user = build_user_prompt(bundle)
-    total = count_tokens(user, system=INTAKE_SYSTEM)
+    category = detect_intake_category(bundle.lead)
+    intake_system = system_prompt(category)
+    total = count_tokens(user, system=intake_system)
     print(f"\ntotal intake prompt: {total} tokens ({len(user)} chars)")
 
     parts = [
-        section_tokens("system prompt", INTAKE_SYSTEM),
+        section_tokens("system prompt", intake_system),
         section_tokens("output_json_schema", StandardizedProfile.model_json_schema()),
         section_tokens(
             "documents (resume text)",

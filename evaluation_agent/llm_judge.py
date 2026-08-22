@@ -78,6 +78,7 @@ class LLMJudge:
         profile_context: Optional[list[str]] = None,
         occupation_note: Optional[str] = None,
         kb_principles: Optional[dict[str, Any]] = None,
+        aao_illustrative_examples: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         user = build_criterion_user_prompt(
             visa_category=visa_category,
@@ -88,6 +89,7 @@ class LLMJudge:
             profile_context=profile_context,
             occupation_note=occupation_note,
             kb_principles=kb_principles,
+            aao_illustrative_examples=aao_illustrative_examples,
         )
         raw = chat_json(
             system=CRITERION_SYSTEM_PROMPT,

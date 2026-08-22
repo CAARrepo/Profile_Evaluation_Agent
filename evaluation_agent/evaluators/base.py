@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from ..aao_examples import select_aao_examples
 from ..config import DEFAULT_DISCLAIMER, OLLAMA_HOST, OLLAMA_MODEL
 from ..kb_loader import category_section, kb_version, load_knowledge_base
 from ..llm_judge import LLMJudge
@@ -30,10 +31,10 @@ EB1A_INTAKE_MAP: dict[str, list[str]] = {
     "eb1a_judging": ["judging", "peer_review"],
     "eb1a_original_contributions": ["patents", "conferences"],
     "eb1a_scholarly_articles": ["publications", "google_scholar", "conferences"],
-    "eb1a_artistic_display": [],
+    "eb1a_artistic_display": ["artistic_display"],
     "eb1a_leading_critical_role": ["critical_role"],
     "eb1a_high_salary": ["high_salary"],
-    "eb1a_commercial_success_performing_arts": [],
+    "eb1a_commercial_success_performing_arts": ["commercial_success"],
 }
 
 
@@ -78,6 +79,10 @@ class BaseEvaluator(ABC):
             facts.append(f"Applicant: {name}")
         if intake.get("field_of_endeavor"):
             facts.append(f"Field of endeavor: {intake['field_of_endeavor']}")
+        if intake.get("proposed_endeavor"):
+            facts.append(f"Proposed endeavor: {intake['proposed_endeavor']}")
+        if intake.get("national_importance_summary"):
+            facts.append(f"National importance: {intake['national_importance_summary']}")
         if intake.get("summary"):
             facts.append(f"Intake summary: {intake['summary']}")
         for job in intake.get("employment") or []:
@@ -114,6 +119,11 @@ class BaseEvaluator(ABC):
         occupation_note: str = "",
     ) -> CriterionEvaluation:
         facts, gaps, answer = collect_mapped_facts(intake, intake_keys)
+        examples = select_aao_examples(
+            self.visa_category,
+            str(criterion_def.get("criterion_id") or ""),
+            intake,
+        )
         judgment = self.judge.judge_criterion(
             visa_category=self.visa_category,
             criterion=criterion_def,
@@ -127,6 +137,7 @@ class BaseEvaluator(ABC):
                 "missing_documents": self.principles.get("missing_documents"),
                 "missing_information": self.principles.get("missing_information"),
             },
+            aao_illustrative_examples=examples or None,
         )
         return CriterionEvaluation(
             criterion_id=str(criterion_def.get("criterion_id") or ""),
@@ -140,4 +151,5 @@ class BaseEvaluator(ABC):
             information_gaps=merge_gap_lists(gaps, judgment["information_gaps"], limit=8),
             recommended_evidence=judgment["recommended_evidence"]
             or list(criterion_def.get("recommended_evidence") or [])[:6],
+            aao_illustrative_examples=examples,
         )

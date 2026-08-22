@@ -3,16 +3,17 @@
 Each category lives in its own folder under knowledge_base/:
 
     <CATEGORY>_Knowledge_Base/
-        <category>_evaluation_knowledge_base.json   evaluation rules
-        01_Controlling_Sources/CFR/                 binding regulation
-        01_Controlling_Sources/USCIS_Policy_Manual/ USCIS policy guidance
+        01_Controlling_Sources/CFR/                 binding regulation (runtime)
+        01_Controlling_Sources/USCIS_Policy_Manual/ USCIS policy guidance (runtime)
         02_AAO_Non_Precedent_Decisions/             non-binding AAO decisions
         00_Catalog/                                 metadata for those decisions
 
     <CATEGORY>_Knowledge_Base_original/             untouched archive copy
 
-Only O-1A currently has AAO decisions; the catalog accessors return empty
-results for the other categories rather than raising.
+Runtime evaluation reads only 01_Controlling_Sources/. The older
+``*_evaluation_knowledge_base.json`` files are not loaded. Only O-1A currently
+has AAO decisions; the catalog accessors return empty results for the other
+categories rather than raising.
 """
 
 from __future__ import annotations
@@ -30,13 +31,28 @@ from .config import (
     CFR_DIRNAME,
     CONTROLLING_SOURCES_DIRNAME,
     KB_ARCHIVE_SUFFIX,
-    KB_FILENAMES,
     KB_HOMES,
     KNOWLEDGE_BASE_DIR,
     POLICY_MANUAL_DIRNAME,
-    ROOT_DIR,
 )
 from .schema import VisaCategory
+
+_SECTION_KEY = {
+    "O-1A": "O1A",
+    "EB-1A": "EB1A",
+    "EB-2 NIW": "EB2_NIW",
+}
+
+# Pipeline behavior, not legal text. Kept here so we do not re-read the
+# evaluation JSON for agent instructions.
+_MVP_PRINCIPLES = {
+    "applicant_statement_handling": (
+        "Applicant-stated facts may be treated as provisionally true for "
+        "preliminary analysis and labeled unverified."
+    ),
+    "missing_documents": "Missing documents do not automatically fail a criterion.",
+    "missing_information": "Record gaps; do not ask follow-up questions.",
+}
 
 
 def kb_home(visa_category: VisaCategory) -> Path:
@@ -49,28 +65,173 @@ def kb_archive_home(visa_category: VisaCategory) -> Path:
     return KNOWLEDGE_BASE_DIR / (KB_HOMES[visa_category] + KB_ARCHIVE_SUFFIX)
 
 
+def controlling_sources_dir(visa_category: VisaCategory) -> Path:
+    return kb_home(visa_category) / CONTROLLING_SOURCES_DIRNAME
+
+
 def _resolve_kb_path(visa_category: VisaCategory) -> Path:
-    filename = KB_FILENAMES[visa_category]
-    candidates = [
-        kb_home(visa_category) / filename,
-        kb_archive_home(visa_category) / filename,
-        # Layouts used before the knowledge base was split per category.
-        KNOWLEDGE_BASE_DIR / filename,
-        ROOT_DIR / filename,
-    ]
-    for path in candidates:
-        if path.is_file():
-            return path
+    """Primary runtime source: the CFR JSON under 01_Controlling_Sources."""
+    cfr_dir = controlling_sources_dir(visa_category) / CFR_DIRNAME
+    files = sorted(cfr_dir.glob("*.json")) if cfr_dir.is_dir() else []
+    if files:
+        return files[0]
     raise FileNotFoundError(
-        f"Knowledge base for {visa_category} not found. Tried: "
-        + ", ".join(str(p) for p in candidates)
+        f"CFR controlling source for {visa_category} not found under {cfr_dir}"
     )
+
+
+def _first_doc(docs: list[dict[str, Any]]) -> dict[str, Any]:
+    return docs[0] if docs else {}
+
+
+def _meta(doc: dict[str, Any]) -> dict[str, Any]:
+    meta = doc.get("source_metadata")
+    return meta if isinstance(meta, dict) else {}
+
+
+def _with_required_elements(criterion: dict[str, Any]) -> dict[str, Any]:
+    out = dict(criterion)
+    if out.get("required_elements"):
+        return out
+    concept = (
+        out.get("concept")
+        or out.get("legal_concept")
+        or out.get("regulatory_concept")
+        or ""
+    )
+    if concept:
+        out["required_elements"] = [concept]
+        out.setdefault("regulatory_concept", concept)
+    return out
+
+
+def _merge_criteria(
+    cfr_criteria: list[dict[str, Any]],
+    pm_guidance: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    guidance = {
+        str(item.get("criterion_id")): item
+        for item in pm_guidance
+        if item.get("criterion_id")
+    }
+    merged: list[dict[str, Any]] = []
+    for raw in cfr_criteria:
+        criterion = _with_required_elements(raw)
+        extra = guidance.get(str(criterion.get("criterion_id")) or "", {})
+        for key in (
+            "evaluation_questions",
+            "strong_examples",
+            "weak_or_risky_examples",
+            "recommended_evidence",
+            "common_information_gaps",
+            "evaluation_focus",
+        ):
+            if extra.get(key) and not criterion.get(key):
+                criterion[key] = extra[key]
+        if extra.get("common_weaknesses") and not criterion.get("weak_or_risky_examples"):
+            criterion["weak_or_risky_examples"] = extra["common_weaknesses"]
+        merged.append(criterion)
+    return merged
+
+
+def _o1a_section(cfr: dict[str, Any], pm: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "criteria": _merge_criteria(
+            list(cfr.get("evidentiary_criteria") or []),
+            list(pm.get("evidence_guidance_by_criterion") or []),
+        ),
+        "final_merits_factors": list(pm.get("final_merits_factors") or []),
+        "evaluation_method": pm.get("evaluation_method") or {},
+        "threshold_structure": cfr.get("threshold_structure") or {},
+        "definition_of_extraordinary_ability": cfr.get(
+            "definition_of_extraordinary_ability"
+        ),
+    }
+
+
+def _eb1a_section(cfr: dict[str, Any], pm: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "criteria": _merge_criteria(
+            list(cfr.get("evidentiary_criteria") or []),
+            list(pm.get("evidence_guidance_by_criterion") or []),
+        ),
+        "two_step_evaluation": pm.get("two_step_evaluation") or {},
+        "final_merits_analysis": pm.get("final_merits_analysis") or {},
+        "threshold_structure": cfr.get("threshold_structure") or {},
+        "definition_of_extraordinary_ability": cfr.get(
+            "definition_of_extraordinary_ability"
+        ),
+    }
+
+
+def _niw_section(cfr: dict[str, Any], pm: dict[str, Any]) -> dict[str, Any]:
+    paths = cfr.get("underlying_eb2_paths") or {}
+    ea = dict(paths.get("exceptional_ability_path") or {})
+    ea["criteria"] = [
+        _with_required_elements(c) for c in (ea.get("criteria") or [])
+    ]
+    return {
+        "part_1_underlying_EB2": {
+            "advanced_degree_path": paths.get("advanced_degree_path") or {},
+            "exceptional_ability_path": ea,
+        },
+        "part_2_NIW_three_prongs": {
+            "all_prongs_required": (pm.get("precedent_framework") or {}).get(
+                "all_prongs_required", True
+            ),
+            "prongs": list(pm.get("three_prong_analysis") or []),
+            "precedent_framework": pm.get("precedent_framework") or {},
+        },
+    }
+
+
+def _assemble_from_controlling_sources(
+    visa_category: VisaCategory,
+    sources: dict[str, Any],
+) -> dict[str, Any]:
+    cfr = _first_doc(sources.get("cfr") or [])
+    pm = _first_doc(sources.get("policy_manual") or [])
+    if not cfr:
+        raise FileNotFoundError(
+            f"No CFR file under {controlling_sources_dir(visa_category) / CFR_DIRNAME}"
+        )
+    builders = {
+        "O-1A": _o1a_section,
+        "EB-1A": _eb1a_section,
+        "EB-2 NIW": _niw_section,
+    }
+    section = builders[visa_category](cfr, pm)
+    cfr_meta = _meta(cfr)
+    pm_meta = _meta(pm)
+    version = str(cfr_meta.get("generated_date") or pm_meta.get("generated_date") or "")
+    return {
+        "knowledge_base_metadata": {
+            "version": version,
+            "runtime_source": "01_Controlling_Sources",
+            "cfr_title": cfr_meta.get("title") or "",
+            "policy_manual_title": pm_meta.get("title") or "",
+            "global_evaluation_principles": dict(_MVP_PRINCIPLES),
+        },
+        "evaluation_agent_instructions": {
+            "evaluation_method": pm.get("evaluation_method") or pm.get("two_step_evaluation") or {},
+        },
+        _SECTION_KEY[visa_category]: section,
+    }
 
 
 @lru_cache(maxsize=8)
 def load_knowledge_base(visa_category: VisaCategory) -> dict[str, Any]:
-    path = _resolve_kb_path(visa_category)
-    return json.loads(path.read_text(encoding="utf-8"))
+    """Build the in-memory evaluation KB from CFR + Policy Manual files."""
+    kb = _assemble_from_controlling_sources(
+        visa_category, load_controlling_sources(visa_category)
+    )
+    base = controlling_sources_dir(visa_category)
+    meta = kb["knowledge_base_metadata"]
+    meta["cfr_files"] = [p.name for p in sorted((base / CFR_DIRNAME).glob("*.json"))]
+    meta["policy_manual_files"] = [
+        p.name for p in sorted((base / POLICY_MANUAL_DIRNAME).glob("*.json"))
+    ]
+    return kb
 
 
 def kb_version(kb: dict[str, Any]) -> str:
@@ -79,11 +240,7 @@ def kb_version(kb: dict[str, Any]) -> str:
 
 
 def category_section(kb: dict[str, Any], visa_category: VisaCategory) -> dict[str, Any]:
-    key = {
-        "O-1A": "O1A",
-        "EB-1A": "EB1A",
-        "EB-2 NIW": "EB2_NIW",
-    }[visa_category]
+    key = _SECTION_KEY[visa_category]
     section = kb.get(key)
     if not isinstance(section, dict):
         raise KeyError(f"Knowledge base missing section '{key}'")

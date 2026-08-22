@@ -29,6 +29,7 @@ class CriterionEvaluation(BaseModel):
     weaknesses: list[str] = Field(default_factory=list)
     information_gaps: list[str] = Field(default_factory=list)
     recommended_evidence: list[str] = Field(default_factory=list)
+    aao_illustrative_examples: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CriteriaSummary(BaseModel):

@@ -1,4 +1,4 @@
-"""Standardized O-1A intake profile schema."""
+"""Standardized intake profile schema for O-1A, EB-1A, and EB-2 NIW."""
 
 from __future__ import annotations
 
@@ -16,7 +16,9 @@ class EvidenceStatus(str, Enum):
     CONFLICTING = "conflicting"
 
 
-class O1CriterionKey(str, Enum):
+class IntakeCriterionKey(str, Enum):
+    """Shared evidence buckets used by O-1A, EB-1A, and EB-2 NIW intake."""
+
     AWARDS = "awards"
     MEMBERSHIPS = "memberships"
     MEDIA = "media"
@@ -28,6 +30,11 @@ class O1CriterionKey(str, Enum):
     HIGH_SALARY = "high_salary"
     CONFERENCES = "conferences"
     GOOGLE_SCHOLAR = "google_scholar"
+    ARTISTIC_DISPLAY = "artistic_display"
+    COMMERCIAL_SUCCESS = "commercial_success"
+
+
+O1CriterionKey = IntakeCriterionKey
 
 
 class EvidenceItem(BaseModel):
@@ -37,7 +44,7 @@ class EvidenceItem(BaseModel):
 
 
 class CriterionIntake(BaseModel):
-    key: O1CriterionKey
+    key: IntakeCriterionKey
     applicant_answer: Literal["yes", "no", "not_sure", "unknown"] = "unknown"
     claim_summary: str = ""
     evidence_status: EvidenceStatus = EvidenceStatus.MISSING
@@ -115,7 +122,19 @@ class StandardizedProfile(BaseModel):
 
     case_id: str
     identity: ApplicantIdentity
+    visa_category: str = Field(
+        default="",
+        description="O-1A, EB-1A, or EB-2 NIW — filled by the pipeline from immigration_category",
+    )
     field_of_endeavor: str = ""
+    proposed_endeavor: str = Field(
+        default="",
+        description="NIW: what the applicant proposes to do in the United States",
+    )
+    national_importance_summary: str = Field(
+        default="",
+        description="NIW: stated national-importance rationale, if any",
+    )
     summary: str = ""
     employment: list[EmploymentRecord] = Field(default_factory=list)
     education: list[EducationRecord] = Field(default_factory=list)

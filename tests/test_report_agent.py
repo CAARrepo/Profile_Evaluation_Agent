@@ -16,6 +16,20 @@ from tests.fakes import FakeJudge
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+def _pdf_page_has_image(page) -> bool:
+    resources = page.get("/Resources")
+    if not resources:
+        return False
+    xobjects = resources.get("/XObject")
+    if xobjects is None:
+        return False
+    xobjects = xobjects.get_object()
+    for name in xobjects:
+        if xobjects[name].get_object().get("/Subtype") == "/Image":
+            return True
+    return False
+
+
 def _eval_o1a() -> tuple[dict, dict]:
     intake = json.loads((FIXTURES / "intake_o1a.json").read_text(encoding="utf-8"))
     evaluation = EvaluationAgent(judge=FakeJudge()).evaluate_intake(intake)  # type: ignore[arg-type]
@@ -87,8 +101,21 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     assert "attorney review not completed" not in text.lower()
     assert "<b>" not in text
     assert "</b>" not in text
-    # Concise-ish: normal fixture should stay within a reasonable page budget
-    assert 1 <= len(reader.pages) <= 6
+    # Profile sections plus the static firm case study
+    assert 1 <= len(reader.pages) <= 16
+    assert "O-1A approval rate: 100%" in text
+    assert "Prior results do not guarantee a similar outcome" in text
+    assert "Attorney advertising" in text
+    assert "Patrick" in text
+    assert "Total O-1A preparation and processing time" in text
+    assert "Narendar" not in text
+    assert "Christian" not in text
+    assert "O-1A approval rate: 100%" in markdown
+    assert "Patrick" in markdown
+    assert Path(client.firm_case_study_image).is_file()
+    assert client.firm_case_study_image.endswith("Image 1. Patrick approval.png")
+    assert "Patrick O-1A Approval" in text
+    assert any(_pdf_page_has_image(page) for page in reader.pages)
 
     md = tmp_path / "r.md"
     js = tmp_path / "r.json"
@@ -192,3 +219,11 @@ def test_initial_report_niw_includes_prongs():
         "Substantial" in r.criterion_name for r in client.criterion_rows
     )
     assert report.attorney_reviewed is False
+    assert client.firm_approval_rate_line == "EB-2 NIW approval rate: 100%"
+    joined_study = " ".join(client.firm_case_study_paragraphs)
+    assert "Christian" in joined_study
+    assert "Patrick" not in client.firm_case_study_title
+    assert "Narendar" not in joined_study
+    assert "EB-2 NIW approval rate: 100%" in markdown
+    assert client.firm_case_study_image.endswith("Image 3. Christian approval.png")
+    assert Path(client.firm_case_study_image).is_file()

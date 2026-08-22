@@ -37,9 +37,9 @@ def detect_visa_category(intake: dict[str, Any], override: str | None = None) ->
 
     identity = intake.get("identity") or {}
     raw = (
-        identity.get("immigration_category")
+        intake.get("visa_category")
+        or identity.get("immigration_category")
         or intake.get("immigration_category")
-        or intake.get("visa_category")
         or ""
     )
     return normalize_category(str(raw))

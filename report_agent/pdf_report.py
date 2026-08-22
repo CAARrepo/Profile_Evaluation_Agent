@@ -11,8 +11,11 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     HRFlowable,
+    Image as PdfImage,
+    KeepTogether,
     ListFlowable,
     ListItem,
     Paragraph,
@@ -172,7 +175,40 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             spaceBefore=4,
             spaceAfter=4,
         ),
+        "h2": ParagraphStyle(
+            "ReportH2",
+            parent=base["Normal"],
+            fontName=font_bold,
+            fontSize=10.5,
+            leading=13.5,
+            textColor=_NAVY,
+            alignment=TA_LEFT,
+            spaceBefore=8,
+            spaceAfter=4,
+        ),
+        "caption": ParagraphStyle(
+            "ReportCaption",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=8,
+            leading=10,
+            textColor=_SLATE,
+            alignment=TA_CENTER,
+            spaceBefore=4,
+            spaceAfter=8,
+        ),
     }
+
+
+def _fitted_image(path: str, max_width: float, max_height: float) -> PdfImage:
+    reader = ImageReader(path)
+    width_px, height_px = reader.getSize()
+    if width_px <= 0 or height_px <= 0:
+        raise ValueError(f"Invalid image size for {path}")
+    scale = min(max_width / width_px, max_height / height_px)
+    image = PdfImage(path, width=width_px * scale, height=height_px * scale)
+    image.hAlign = "CENTER"
+    return image
 
 
 def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
@@ -346,6 +382,48 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
             _p(
                 "Continue collecting independent, verifiable documents for the strongest opportunities above.",
                 styles["body"],
+            )
+        )
+
+    if content.firm_approval_rate_line or content.firm_results_disclosure:
+        story.append(_p("7. Past Results in This Category", styles["h1"]))
+        if content.firm_approval_rate_line:
+            story.append(_p(content.firm_approval_rate_line, styles["body"]))
+        if content.firm_results_disclosure:
+            story.append(_p(content.firm_results_disclosure, styles["body"]))
+
+    if content.firm_case_study_title or content.firm_case_study_paragraphs:
+        story.append(_p("8. Example of an Approved Case in This Category", styles["h1"]))
+        if content.firm_case_study_heading:
+            story.append(_p(content.firm_case_study_heading, styles["section_label"]))
+        if content.firm_case_study_title:
+            story.append(_p(content.firm_case_study_title, styles["h2"]))
+        for para in content.firm_case_study_paragraphs:
+            if para.startswith("## "):
+                story.append(_p(para[3:], styles["section_label"]))
+            else:
+                story.append(_p(para, styles["body"]))
+        if content.firm_case_study_image and Path(content.firm_case_study_image).is_file():
+            image_bits: list = [
+                Spacer(1, 8),
+                _fitted_image(content.firm_case_study_image, 6.8 * inch, 3.2 * inch),
+            ]
+            if content.firm_case_study_image_caption:
+                image_bits.append(_p(content.firm_case_study_image_caption, styles["caption"]))
+            story.append(KeepTogether(image_bits))
+
+    if content.firm_timeline_items:
+        story.append(_p("9. Preparation and Processing Timeline", styles["h1"]))
+        if content.firm_timeline_heading:
+            story.append(_p(content.firm_timeline_heading, styles["section_label"]))
+        story.append(
+            ListFlowable(
+                [
+                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                    for item in content.firm_timeline_items
+                ],
+                bulletType="bullet",
+                start="•",
             )
         )
 

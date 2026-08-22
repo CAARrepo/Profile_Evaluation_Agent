@@ -90,5 +90,6 @@ class O1AEvaluator(BaseEvaluator):
             "evaluation_method": "ollama_llm_per_criterion",
             "ollama_model": self.model,
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
+            "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
         }
         return result

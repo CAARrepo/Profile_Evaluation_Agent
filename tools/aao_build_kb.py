@@ -146,6 +146,16 @@ def make_tree() -> None:
         (AAO_DIR / name).mkdir(parents=True, exist_ok=True)
 
 
+def _pick_sources(meta: dict[str, Any], needles: list[str]) -> list[dict[str, Any]]:
+    """Keep only primary_sources entries that belong to this classification."""
+    sources = meta.get("primary_sources") or []
+    return [
+        s
+        for s in sources
+        if any(n.lower() in str(s.get("name", "")).lower() for n in needles)
+    ]
+
+
 def split_controlling_sources(kb: dict[str, Any]) -> None:
     """Separate the structured O-1A rules into regulation vs. policy guidance."""
     meta = kb.get("knowledge_base_metadata", {})
@@ -198,9 +208,7 @@ def split_controlling_sources(kb: dict[str, Any]) -> None:
             }
             for c in criteria
         ],
-        "regulatory_sources": [
-            s for s in meta.get("primary_sources", []) if s.get("type") == "regulation"
-        ],
+        "regulatory_sources": _pick_sources(meta, ["214.2(o)"]),
     }
 
     pm_payload = {
@@ -253,11 +261,9 @@ def split_controlling_sources(kb: dict[str, Any]) -> None:
             }
         },
         "global_evaluation_principles": meta.get("global_evaluation_principles"),
-        "policy_sources": [
-            s
-            for s in meta.get("primary_sources", [])
-            if s.get("type") in {"USCIS policy", "USCIS policy alert"}
-        ],
+        "policy_sources": _pick_sources(
+            meta, ["Volume 2, Part M"]
+        ),
     }
 
     (CFR_DIR / "8_CFR_214-2(o)_O1A_regulatory_criteria.json").write_text(
