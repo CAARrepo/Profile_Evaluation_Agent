@@ -16,9 +16,11 @@ Rules (strict):
 4. Do NOT ask the applicant follow-up questions. Record gaps instead.
 5. Ground your reasoning in the provided knowledge-base criterion fields (required_elements, strong/weak examples, recommended evidence).
 6. If aao_illustrative_examples are present, they are NON-PRECEDENT and NON-BINDING. Do NOT copy their outcomes. Do NOT treat them as the legal test. Use them only to see how similar evidence was weighed. Score only against required_elements.
-7. Return status as exactly one of: strong | potential | weak | not_indicated | not_applicable
-8. Return confidence as exactly one of: high | medium | low
-9. Output VALID JSON only matching the requested schema. No markdown fences.
+7. Distinguish LEGAL REQUIREMENT (CFR / Policy Manual / binding precedent) from OBSERVED AAO PATTERN (non-precedent). Never convert one AAO case into a universal legal rule.
+8. Do not say AAO "approved" or "credited" a credential unless evidence_status is EXPLICITLY_ACCEPTED. Evidence that merely appeared in a sustained record is PRESENT_IN_RECORD_NOT_ANALYZED or DISCUSSED_BUT_NOT_DETERMINATIVE.
+9. Return status as exactly one of: strong | potential | weak | not_indicated | not_applicable
+10. Return confidence as exactly one of: high | medium | low
+11. Output VALID JSON only matching the requested schema. No markdown fences.
 """
 
 
@@ -33,20 +35,33 @@ def build_criterion_user_prompt(
     occupation_note: str | None = None,
     kb_principles: dict[str, Any] | None = None,
     aao_illustrative_examples: list[dict[str, Any]] | None = None,
+    legal_requirement: list[str] | None = None,
+    observed_aao_pattern: dict[str, Any] | None = None,
+    similar_sustained_cases: list[dict[str, Any]] | None = None,
+    similar_denied_cases: list[dict[str, Any]] | None = None,
+    profile_classification: dict[str, Any] | None = None,
 ) -> str:
+    legal = legal_requirement or list(criterion.get("required_elements") or [])
     payload = {
         "task": (
             "Evaluate this single visa criterion for a preliminary profile assessment. "
-            "Reason about the applicant facts against the knowledge-base required elements. "
-            "If aao_illustrative_examples are included, they are non-precedent illustrations "
-            "only — do not copy those case outcomes and do not treat them as the legal test."
+            "Reason about the applicant facts against LEGAL REQUIREMENT first. "
+            "If observed AAO patterns or similar cases are included, they are "
+            "non-precedent illustrations only — do not copy those case outcomes "
+            "and do not treat them as the legal test."
         ),
         "visa_category": visa_category,
         "dominant_applicant_answer": dominant_answer,
         "occupation_note": occupation_note or "",
+        "profile_classification": profile_classification or {},
         "profile_context": profile_context or [],
         "applicant_facts": applicant_facts,
         "known_information_gaps": information_gaps,
+        "LEGAL_REQUIREMENT": {
+            "source": "Statute / CFR and USCIS Policy Manual (binding on officers)",
+            "required_elements": legal,
+        },
+        "OBSERVED_AAO_PATTERN": observed_aao_pattern or {},
         "criterion_knowledge_base": {
             "criterion_id": criterion.get("criterion_id"),
             "name": criterion.get("name"),
@@ -68,21 +83,82 @@ def build_criterion_user_prompt(
             "no_follow_up_questions": True,
             **(kb_principles or {}),
         },
+        "similar_sustained_cases": similar_sustained_cases or [],
+        "similar_denied_cases": similar_denied_cases or [],
         "aao_illustrative_examples": aao_illustrative_examples or [],
         "aao_authority": (
             "AAO non-precedent—non-binding. Illustrative only. "
-            "CFR and the USCIS Policy Manual are the legal test."
-            if aao_illustrative_examples
+            "CFR and the USCIS Policy Manual are the legal test. "
+            "Source hierarchy: (1) Statute/CFR (2) Policy Manual "
+            "(3) binding precedent (4) AAO nonprecedent (5) derived patterns."
+            if (aao_illustrative_examples or similar_sustained_cases or similar_denied_cases)
             else ""
         ),
         "output_schema": {
             "status": "strong|potential|weak|not_indicated|not_applicable",
             "confidence": "high|medium|low",
-            "reasoning_summary": "string",
+            "reasoning_summary": "string — separate legal requirement from observed AAO pattern",
             "strengths": ["string"],
             "weaknesses": ["string"],
+            "satisfied_elements": ["string — from LEGAL_REQUIREMENT"],
+            "missing_elements": ["string — from LEGAL_REQUIREMENT"],
             "information_gaps": ["string"],
-            "recommended_evidence": ["string"],
+            "recommended_evidence": ["string — evidence the applicant may already have or should gather for current claims"],
+        },
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+FINAL_MERITS_SYSTEM_PROMPT = """You are an immigration profile Evaluation Agent performing STEP 2 — Final Merits Determination.
+
+This is a separate analysis from whether three evidentiary criteria appear satisfied.
+Meeting three criteria is a threshold, not an approval.
+
+Rules:
+1. Use only provided applicant facts and criterion results. Do not invent facts.
+2. Legal test is the statute/CFR definition of extraordinary ability and USCIS Policy Manual final-merits factors.
+3. AAO similar cases are NON-PRECEDENT illustrations only.
+4. Address: sustained national or international acclaim; recognition beyond the employer; independent recognition; impact/significance; standing relative to others in the field; career trajectory; quality of the evidence as a whole.
+5. Output VALID JSON only. No markdown fences.
+"""
+
+
+def build_final_merits_user_prompt(
+    *,
+    visa_category: str,
+    central_question: str,
+    factors: list[str],
+    negative_patterns: list[str],
+    criterion_results: list[dict[str, Any]],
+    applicant_facts: list[str],
+    profile_classification: dict[str, Any] | None = None,
+    similar_cases: list[dict[str, Any]] | None = None,
+) -> str:
+    payload = {
+        "task": (
+            "STEP 2 — Final merits. Do not stop because three criteria look satisfied. "
+            "Evaluate whether the record as a whole shows sustained acclaim and that the "
+            "applicant is among the small percentage at the very top of the field."
+        ),
+        "visa_category": visa_category,
+        "LEGAL_REQUIREMENT": {
+            "central_question": central_question,
+            "factors": factors,
+            "negative_patterns": negative_patterns,
+        },
+        "profile_classification": profile_classification or {},
+        "step_1_criterion_results": criterion_results,
+        "applicant_facts": applicant_facts,
+        "similar_aao_cases_nonprecedent": similar_cases or [],
+        "output_schema": {
+            "sustained_acclaim_assessment": "string",
+            "independent_recognition": "string",
+            "recognition_beyond_employer": "string",
+            "impact_significance": "string",
+            "standing_relative_to_field": "string",
+            "career_trajectory": "string",
+            "overall_evidence_quality": "string",
+            "notes": ["string"],
         },
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)

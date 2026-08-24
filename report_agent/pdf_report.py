@@ -292,7 +292,7 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
     story.append(snap_table)
     story.append(Spacer(1, 8))
 
-    story.append(_p("4. Criterion-by-Criterion Overview", styles["h1"]))
+    story.append(_p(content.step1_heading or "4. Criterion-by-Criterion Overview", styles["h1"]))
     story.append(
         _p(
             "Statuses below are preliminary labels for discussion only. "
@@ -337,6 +337,17 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
     crit_table.setStyle(TableStyle(style_cmds))
     story.append(crit_table)
 
+    if content.step2_heading or content.step2_paragraphs:
+        story.append(_p(content.step2_heading or "STEP 2 — Final Merits Determination", styles["h1"]))
+        story.append(
+            _p(
+                "This final-merits discussion is separate from whether three criteria currently look supportable.",
+                styles["body"],
+            )
+        )
+        for para in content.step2_paragraphs:
+            story.append(_p(para, styles["body"]))
+
     story.append(_p("5. Priority Opportunities", styles["h1"]))
     if content.priority_opportunities:
         story.append(
@@ -377,7 +388,25 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
                 start="•",
             )
         )
-    if not content.information_still_needed and not content.priority_evidence_checklist:
+    if content.potential_evidence_to_develop:
+        story.append(_p("Evidence the applicant does not currently possess", styles["section_label"]))
+        story.append(
+            ListFlowable(
+                [
+                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                    for item in content.potential_evidence_to_develop
+                ],
+                bulletType="bullet",
+                start="•",
+            )
+        )
+    if content.aao_trace_note:
+        story.append(_p(content.aao_trace_note, styles["body"]))
+    if (
+        not content.information_still_needed
+        and not content.priority_evidence_checklist
+        and not content.potential_evidence_to_develop
+    ):
         story.append(
             _p(
                 "Continue collecting independent, verifiable documents for the strongest opportunities above.",

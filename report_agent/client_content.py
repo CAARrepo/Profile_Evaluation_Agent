@@ -130,6 +130,59 @@ def build_client_content(
 
     inserts = load_category_inserts(category)
 
+    step1_heading = ""
+    step2_heading = ""
+    step2_paragraphs: list[str] = []
+    potential_dev: list[str] = []
+    aao_trace = ""
+    if category == "EB-1A":
+        step1_heading = "STEP 1 — Evidentiary Criteria"
+        step2_heading = "STEP 2 — Final Merits Determination"
+        fm = evaluation.get("final_merits") or {}
+        if fm.get("sustained_acclaim_assessment"):
+            step2_paragraphs.append(fix_mojibake(str(fm["sustained_acclaim_assessment"])))
+        for key in (
+            "independent_recognition",
+            "recognition_beyond_employer",
+            "impact_significance",
+            "standing_relative_to_field",
+            "career_trajectory",
+            "overall_evidence_quality",
+        ):
+            val = str(fm.get(key) or "").strip()
+            if val:
+                step2_paragraphs.append(fix_mojibake(val))
+        for note in fm.get("notes") or []:
+            text = fix_mojibake(str(note))
+            if text and text not in step2_paragraphs:
+                step2_paragraphs.append(text)
+        for c in evaluation.get("criteria") or []:
+            if not isinstance(c, dict):
+                continue
+            for item in c.get("potential_new_evidence_to_develop") or []:
+                if not isinstance(item, dict):
+                    continue
+                rec = fix_mojibake(str(item.get("recommendation") or ""))
+                disc = str(item.get("disclaimer") or "The applicant does not currently possess this evidence.")
+                how = fix_mojibake(str(item.get("how_aao_treated_it") or ""))
+                src = item.get("source") or {}
+                cite = ""
+                if src.get("case_id") or src.get("filename"):
+                    cite = (
+                        f" [AAO {src.get('case_id') or ''} {src.get('decision_date') or ''} "
+                        f"{src.get('filename') or ''} p.{src.get('pdf_page') or '?'} "
+                        f"{src.get('outcome') or ''}; {item.get('evidence_status') or ''}]"
+                    )
+                line = f"{disc} {rec} {how}{cite}".strip()
+                if line:
+                    potential_dev.append(line)
+        potential_dev = consolidate_evidence(potential_dev, limit=8)
+        aao_trace = (
+            "Comparable AAO decisions cited above are non-precedent and non-binding. "
+            "They are illustrations only. The legal test is the statute, 8 CFR 204.5(h), "
+            "and the USCIS Policy Manual."
+        )
+
     return ClientReportContent(
         document_title=title,
         applicant_name=report.applicant_name or "Applicant",
@@ -151,6 +204,11 @@ def build_client_content(
         information_still_needed=info_needed,
         priority_evidence_checklist=priority_evidence,
         recommended_next_steps=next_steps,
+        step1_heading=step1_heading,
+        step2_heading=step2_heading,
+        step2_paragraphs=step2_paragraphs[:8],
+        potential_evidence_to_develop=potential_dev,
+        aao_trace_note=aao_trace,
         firm_approval_rate_line=inserts.get("approval_rate_line", ""),
         firm_results_disclosure=inserts.get("disclosure", ""),
         firm_case_study_heading=inserts.get("case_study_heading", ""),

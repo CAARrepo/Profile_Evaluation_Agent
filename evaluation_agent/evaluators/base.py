@@ -117,6 +117,10 @@ class BaseEvaluator(ABC):
         criterion_def: dict[str, Any],
         intake_keys: list[str],
         occupation_note: str = "",
+        profile_classification: dict[str, Any] | None = None,
+        observed_aao_pattern: dict[str, Any] | None = None,
+        similar_sustained_cases: list[dict[str, Any]] | None = None,
+        similar_denied_cases: list[dict[str, Any]] | None = None,
     ) -> CriterionEvaluation:
         facts, gaps, answer = collect_mapped_facts(intake, intake_keys)
         examples = select_aao_examples(
@@ -124,6 +128,9 @@ class BaseEvaluator(ABC):
             str(criterion_def.get("criterion_id") or ""),
             intake,
         )
+        if similar_sustained_cases or similar_denied_cases:
+            examples = (similar_sustained_cases or [])[:2] + (similar_denied_cases or [])[:2]
+        legal = list(criterion_def.get("required_elements") or [])
         judgment = self.judge.judge_criterion(
             visa_category=self.visa_category,
             criterion=criterion_def,
@@ -138,7 +145,15 @@ class BaseEvaluator(ABC):
                 "missing_information": self.principles.get("missing_information"),
             },
             aao_illustrative_examples=examples or None,
+            legal_requirement=legal or None,
+            observed_aao_pattern=observed_aao_pattern,
+            similar_sustained_cases=similar_sustained_cases,
+            similar_denied_cases=similar_denied_cases,
+            profile_classification=profile_classification,
         )
+        recommended = judgment["recommended_evidence"] or list(
+            criterion_def.get("recommended_evidence") or []
+        )[:6]
         return CriterionEvaluation(
             criterion_id=str(criterion_def.get("criterion_id") or ""),
             criterion_name=str(criterion_def.get("name") or criterion_def.get("criterion_id") or ""),
@@ -149,7 +164,12 @@ class BaseEvaluator(ABC):
             strengths=judgment["strengths"],
             weaknesses=judgment["weaknesses"],
             information_gaps=merge_gap_lists(gaps, judgment["information_gaps"], limit=8),
-            recommended_evidence=judgment["recommended_evidence"]
-            or list(criterion_def.get("recommended_evidence") or [])[:6],
+            recommended_evidence=recommended,
             aao_illustrative_examples=examples,
+            satisfied_elements=judgment.get("satisfied_elements") or [],
+            missing_elements=judgment.get("missing_elements") or [],
+            current_evidence_strengths=judgment["strengths"],
+            current_evidence_weaknesses=judgment["weaknesses"],
+            recommended_existing_evidence=recommended,
+            legal_requirement=legal,
         )

@@ -59,6 +59,8 @@ def test_eb1a_evaluation_structure(agent: EvaluationAgent):
     result = agent.evaluate_intake(_load("intake_eb1a.json"))
     assert result.visa_category == "EB-1A"
     assert result.final_merits is not None
+    assert result.profile_classification is not None
+    assert "STEP 1" in " ".join(result.final_merits.notes) or "final merits" in " ".join(result.final_merits.notes).lower()
     assert len(result.criteria) == 10
     arts = next(c for c in result.criteria if c.criterion_id == "eb1a_commercial_success_performing_arts")
     assert arts.status == "not_applicable"

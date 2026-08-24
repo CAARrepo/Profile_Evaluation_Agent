@@ -191,6 +191,8 @@ def render_markdown(
             "",
         ]
     )
+    if client.step1_heading:
+        lines[-3] = f"## 4. {client.step1_heading}"
     for row in client.criterion_rows:
         lines.append(f"### {row.criterion_name}")
         lines.append("")
@@ -203,6 +205,12 @@ def render_markdown(
             for e in row.top_evidence:
                 lines.append(f"  - {e}")
         lines.append("")
+
+    if client.step2_heading or client.step2_paragraphs:
+        lines.extend([f"## {client.step2_heading or 'STEP 2 — Final Merits Determination'}", ""])
+        for para in client.step2_paragraphs:
+            lines.append(para)
+            lines.append("")
 
     lines.extend(["## 5. Priority Opportunities", ""])
     if client.priority_opportunities:
@@ -221,6 +229,14 @@ def render_markdown(
         lines.append("**Recommended supporting materials**")
         lines.append("")
         lines.extend([f"- {e}" for e in client.priority_evidence_checklist])
+        lines.append("")
+    if client.potential_evidence_to_develop:
+        lines.append("**Evidence the applicant does not currently possess**")
+        lines.append("")
+        lines.extend([f"- {e}" for e in client.potential_evidence_to_develop])
+        lines.append("")
+    if client.aao_trace_note:
+        lines.append(client.aao_trace_note)
         lines.append("")
 
     if client.firm_approval_rate_line or client.firm_results_disclosure:

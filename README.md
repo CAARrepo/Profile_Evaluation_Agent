@@ -132,16 +132,26 @@ knowledge_base/O1A_Knowledge_Base/
 └── 02_AAO_Non_Precedent_Decisions/        51 decisions, filed by field
 ```
 
-`EB1A_Knowledge_Base/` and `EB2NIW_Knowledge_Base/` follow the same pattern but
-currently have `01_Controlling_Sources/` only; no AAO decisions are collected
-for them yet. Every `*_Knowledge_Base_original/` folder is a read-only archive.
+`EB2NIW_Knowledge_Base/` follows the same pattern but currently has
+`01_Controlling_Sources/` only. `EB1A_Knowledge_Base/` also has an AAO catalog
+built from the original non-precedent PDFs (read-only archive in
+`EB1A_Knowledge_Base_original/`). Every `*_Knowledge_Base_original/` folder is
+a read-only archive and must not be modified.
 
 `load_knowledge_base()` merges the CFR criteria with Policy Manual evidence
 guidance. The older `*_evaluation_knowledge_base.json` files are not read.
-For O-1A only, each criterion prompt may include up to two **catalog cards**
-from `00_Catalog/` (occupation, accepted/rejected, one quote + page). Those
-cards are labeled non-precedent and are not the legal test. Full AAO PDFs
-are not loaded.
+For O-1A, each criterion prompt may include up to two **catalog cards**.
+For EB-1A, evaluation retrieves criterion intelligence plus 3–5 similar
+sustained and 3–5 similar dismissed AAO cases (metadata + TF-IDF, never the
+full PDFs). Cards are labeled non-precedent and are not the legal test.
+
+Rebuild the EB-1A AAO indexes (does not touch the original folder):
+
+```bash
+python tools/eb1a_aao_extract.py
+python tools/eb1a_aao_parse.py
+python tools/eb1a_aao_build_kb.py
+```
 
 Accessors live in `evaluation_agent/kb_loader.py`:
 
@@ -161,8 +171,11 @@ pdf = aao_decision_pdf("O-1A", hits[0])
 
 AAO decisions are **non-precedent and non-binding**; surface them with
 `aao_authority_label()` and cite CFR or the Policy Manual for the legal
-standard. They are available to code but are not injected into evaluation
-prompts, so evaluation output is unchanged by their presence.
+standard. Distinctions:
+
+- **LEGAL REQUIREMENT** — statute / CFR / Policy Manual / binding precedent
+- **OBSERVED AAO PATTERN** — non-precedent illustrations and multi-case patterns
+
 
 ## Notes
 

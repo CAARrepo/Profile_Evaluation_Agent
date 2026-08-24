@@ -18,6 +18,15 @@ OverallRating = Literal[
 ]
 
 
+class ProfileClassification(BaseModel):
+    visa_type: str = ""
+    field: list[str] = Field(default_factory=list)
+    industry: list[str] = Field(default_factory=list)
+    occupation: list[str] = Field(default_factory=list)
+    specialty: list[str] = Field(default_factory=list)
+    occupation_search_tags: list[str] = Field(default_factory=list)
+
+
 class CriterionEvaluation(BaseModel):
     criterion_id: str
     criterion_name: str
@@ -30,6 +39,18 @@ class CriterionEvaluation(BaseModel):
     information_gaps: list[str] = Field(default_factory=list)
     recommended_evidence: list[str] = Field(default_factory=list)
     aao_illustrative_examples: list[dict[str, Any]] = Field(default_factory=list)
+    satisfied_elements: list[str] = Field(default_factory=list)
+    missing_elements: list[str] = Field(default_factory=list)
+    current_evidence_strengths: list[str] = Field(default_factory=list)
+    current_evidence_weaknesses: list[str] = Field(default_factory=list)
+    common_aao_pitfalls: list[str] = Field(default_factory=list)
+    similar_sustained_cases: list[dict[str, Any]] = Field(default_factory=list)
+    similar_denied_cases: list[dict[str, Any]] = Field(default_factory=list)
+    recommended_existing_evidence: list[str] = Field(default_factory=list)
+    potential_new_evidence_to_develop: list[dict[str, Any]] = Field(default_factory=list)
+    legal_requirement: list[str] = Field(default_factory=list)
+    observed_aao_pattern: list[str] = Field(default_factory=list)
+    sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CriteriaSummary(BaseModel):
@@ -47,6 +68,13 @@ class FinalMeritsAssessment(BaseModel):
     threshold_criteria_count: int = 0
     major_award_path_possible: bool = False
     notes: list[str] = Field(default_factory=list)
+    independent_recognition: str = ""
+    recognition_beyond_employer: str = ""
+    impact_significance: str = ""
+    standing_relative_to_field: str = ""
+    career_trajectory: str = ""
+    overall_evidence_quality: str = ""
+    sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class NIWUnderlyingEB2(BaseModel):
@@ -76,6 +104,7 @@ class EvaluationResult(BaseModel):
     visa_category: VisaCategory
     knowledge_base_version: str = ""
     overall_profile_rating: OverallRating = "insufficient_information"
+    profile_classification: Optional[ProfileClassification] = None
     criteria_summary: CriteriaSummary = Field(default_factory=CriteriaSummary)
     criteria: list[CriterionEvaluation] = Field(default_factory=list)
     final_merits: Optional[FinalMeritsAssessment] = None

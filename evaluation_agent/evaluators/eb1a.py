@@ -1,10 +1,25 @@
-"""EB-1A criterion + final-merits evaluator (LLM criterion reasoning)."""
+"""EB-1A criterion + final-merits evaluator (LLM criterion reasoning).
+
+STEP 1 scores each regulatory criterion against CFR / Policy Manual.
+STEP 2 is a separate final-merits assessment. AAO non-precedent cases are
+retrieved as illustrations only and never replace the legal test.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from ..schema import EvaluationResult, FinalMeritsAssessment
+from ..eb1a_aao import (
+    attach_eb1a_aao_context,
+    classify_profile,
+    compact_intelligence,
+    retrieve_similar_cases,
+)
+from ..schema import (
+    EvaluationResult,
+    FinalMeritsAssessment,
+    ProfileClassification,
+)
 from ..scoring import overall_rating_from_criteria, summarize_statuses
 from .base import EB1A_INTAKE_MAP, BaseEvaluator
 
@@ -17,6 +32,8 @@ class EB1AEvaluator(BaseEvaluator):
         criteria_defs = self.section.get("criteria") or []
         context = " ".join(self.profile_context_facts(intake)).lower()
         field = str(intake.get("field_of_endeavor") or "").lower()
+        profile = classify_profile(intake)
+        result.profile_classification = ProfileClassification(**profile)
 
         evaluations = []
         for cdef in criteria_defs:
@@ -33,14 +50,26 @@ class EB1AEvaluator(BaseEvaluator):
                     "Use not_applicable unless the applicant's stated field involves performing arts "
                     f"or commercial performing-arts success facts were provided. Context: {field or context[:200]}"
                 )
-            evaluations.append(
-                self.llm_evaluate_criterion(
-                    intake=intake,
-                    criterion_def=cdef,
-                    intake_keys=intake_keys,
-                    occupation_note=occupation_note,
-                )
+            similar = retrieve_similar_cases(intake, cid, profile=profile)
+            intel = compact_intelligence(cid)
+            ev = self.llm_evaluate_criterion(
+                intake=intake,
+                criterion_def=cdef,
+                intake_keys=intake_keys,
+                occupation_note=occupation_note,
+                profile_classification=profile,
+                observed_aao_pattern=intel or None,
+                similar_sustained_cases=similar.get("sustained") or None,
+                similar_denied_cases=similar.get("dismissed") or None,
             )
+            extra = attach_eb1a_aao_context(
+                ev.model_dump(),
+                intake=intake,
+                criterion_id=cid,
+                applicant_facts=ev.applicant_facts,
+                required_elements=list(cdef.get("required_elements") or []),
+            )
+            evaluations.append(ev.model_copy(update=extra))
 
         scored = [e for e in evaluations if e.status != "not_applicable"]
         statuses = [e.status for e in scored]
@@ -49,21 +78,72 @@ class EB1AEvaluator(BaseEvaluator):
         result.overall_profile_rating = overall_rating_from_criteria(statuses)
 
         viable = [e for e in evaluations if e.status in {"strong", "potential"}]
-        final_merits = self.section.get("final_merits_analysis") or {}
-        central = final_merits.get("central_question") or (
+        final_merits_kb = self.section.get("final_merits_analysis") or {}
+        two_step = self.section.get("two_step_evaluation") or {}
+        central = final_merits_kb.get("central_question") or (
             "Whether the applicant has sustained acclaim and is among the small percentage at the very top of the field."
         )
+        similar_for_merits: list[dict[str, Any]] = []
+        for e in evaluations:
+            similar_for_merits.extend(e.similar_sustained_cases[:1])
+            similar_for_merits.extend(e.similar_denied_cases[:1])
+        similar_for_merits = similar_for_merits[:8]
+
+        merits_payload = self.judge.judge_final_merits(
+            visa_category="EB-1A",
+            central_question=str(central),
+            factors=list(final_merits_kb.get("factors") or [])[:8],
+            negative_patterns=list(final_merits_kb.get("negative_patterns") or [])[:6],
+            criterion_results=[
+                {
+                    "criterion_id": e.criterion_id,
+                    "criterion_name": e.criterion_name,
+                    "status": e.status,
+                    "reasoning_summary": e.reasoning_summary,
+                }
+                for e in evaluations
+                if e.status != "not_applicable"
+            ],
+            applicant_facts=self.profile_context_facts(intake)[:12],
+            profile_classification=profile,
+            similar_cases=similar_for_merits,
+        )
+        notes = list(merits_payload.get("notes") or [])
+        notes.insert(
+            0,
+            "STEP 1 is evidentiary criteria. STEP 2 is a separate final-merits determination. "
+            "Meeting three regulatory criteria does not, by itself, establish EB-1A eligibility.",
+        )
+        if two_step.get("critical_warning"):
+            notes.insert(1, str(two_step["critical_warning"]))
         result.final_merits = FinalMeritsAssessment(
-            sustained_acclaim_assessment=(
-                f"Final-merits (preliminary): {central} "
-                f"Currently {len(viable)} criteria rate strong/potential on stated facts."
-            ),
+            sustained_acclaim_assessment=merits_payload.get("sustained_acclaim_assessment")
+            or f"Final-merits (STEP 2): {central} Currently {len(viable)} criteria rate strong/potential.",
             threshold_criteria_count=len(viable),
             major_award_path_possible=False,
-            notes=[
-                "Meeting three regulatory criteria does not, by itself, establish EB-1A eligibility.",
-                *((final_merits.get("negative_patterns") or [])[:2]),
-            ],
+            notes=notes[:8],
+            independent_recognition=str(merits_payload.get("independent_recognition") or ""),
+            recognition_beyond_employer=str(
+                merits_payload.get("recognition_beyond_employer") or ""
+            ),
+            impact_significance=str(merits_payload.get("impact_significance") or ""),
+            standing_relative_to_field=str(
+                merits_payload.get("standing_relative_to_field") or ""
+            ),
+            career_trajectory=str(merits_payload.get("career_trajectory") or ""),
+            overall_evidence_quality=str(merits_payload.get("overall_evidence_quality") or ""),
+            sources=[
+                {
+                    "case_id": c.get("case_id") or "",
+                    "decision_date": c.get("decision_date") or "",
+                    "filename": c.get("filename") or "",
+                    "pdf_page": c.get("pdf_page"),
+                    "outcome": c.get("outcome") or "",
+                    "authority": c.get("authority") or "",
+                }
+                for c in similar_for_merits
+                if c.get("case_id") or c.get("filename")
+            ][:8],
         )
 
         result.top_strengths = [f"{e.criterion_name} ({e.status})" for e in viable][:5]
@@ -79,16 +159,26 @@ class EB1AEvaluator(BaseEvaluator):
             )
 
         next_ev: list[str] = []
-        for e in viable:
+        for e in evaluations:
             for item in e.recommended_evidence:
                 if item not in next_ev:
                     next_ev.append(item)
+            for item in e.potential_new_evidence_to_develop:
+                text = str((item or {}).get("recommendation") or "")
+                if text and text not in next_ev:
+                    next_ev.append(text)
         result.recommended_next_evidence = next_ev[:10]
         result.raw_notes = {
             "evaluation_method": "ollama_llm_per_criterion",
             "ollama_model": self.model,
-            "two_step_evaluation": self.section.get("two_step_evaluation"),
+            "two_step_evaluation": two_step,
+            "evaluation_steps": {
+                "step_1": "Evidentiary criteria (8 CFR 204.5(h)(3))",
+                "step_2": "Final merits determination",
+            },
+            "profile_classification": profile,
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
             "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
+            "aao_authority": "AAO non-precedent—non-binding. Not the legal test.",
         }
         return result

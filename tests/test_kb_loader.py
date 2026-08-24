@@ -57,7 +57,7 @@ def test_o1a_aao_catalog_loaded():
     assert aao_authority_label() == AAO_AUTHORITY_LABEL
 
 
-@pytest.mark.parametrize("category", ["EB-1A", "EB-2 NIW"])
+@pytest.mark.parametrize("category", ["EB-2 NIW"])
 def test_categories_without_decisions_return_empty(category: str):
     assert aao_decisions(category) == []
     assert find_aao_decisions(category, criterion="Awards") == []

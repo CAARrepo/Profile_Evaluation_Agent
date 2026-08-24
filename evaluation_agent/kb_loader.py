@@ -11,9 +11,10 @@ Each category lives in its own folder under knowledge_base/:
     <CATEGORY>_Knowledge_Base_original/             untouched archive copy
 
 Runtime evaluation reads only 01_Controlling_Sources/. The older
-``*_evaluation_knowledge_base.json`` files are not loaded. Only O-1A currently
-has AAO decisions; the catalog accessors return empty results for the other
-categories rather than raising.
+``*_evaluation_knowledge_base.json`` files are not loaded. O-1A and EB-1A
+have AAO decision catalogs under 00_Catalog/; those records are
+non-precedent illustrations only. Catalog accessors return empty results
+when a category has no collected decisions.
 """
 
 from __future__ import annotations
