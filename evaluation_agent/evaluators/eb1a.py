@@ -11,6 +11,7 @@ from typing import Any
 
 from ..eb1a_aao import (
     attach_eb1a_aao_context,
+    build_final_merits_aao_context,
     classify_profile,
     compact_intelligence,
     retrieve_similar_cases,
@@ -83,11 +84,9 @@ class EB1AEvaluator(BaseEvaluator):
         central = final_merits_kb.get("central_question") or (
             "Whether the applicant has sustained acclaim and is among the small percentage at the very top of the field."
         )
-        similar_for_merits: list[dict[str, Any]] = []
-        for e in evaluations:
-            similar_for_merits.extend(e.similar_sustained_cases[:1])
-            similar_for_merits.extend(e.similar_denied_cases[:1])
-        similar_for_merits = similar_for_merits[:8]
+        aao_context = build_final_merits_aao_context(evaluations)
+        pattern_summaries = list(aao_context.get("criterion_pattern_summaries") or [])
+        representative_cases = list(aao_context.get("representative_cases") or [])
 
         merits_payload = self.judge.judge_final_merits(
             visa_category="EB-1A",
@@ -106,7 +105,9 @@ class EB1AEvaluator(BaseEvaluator):
             ],
             applicant_facts=self.profile_context_facts(intake)[:12],
             profile_classification=profile,
-            similar_cases=similar_for_merits,
+            similar_cases=representative_cases,
+            criterion_aao_pattern_summaries=pattern_summaries,
+            representative_aao_cases=representative_cases,
         )
         notes = list(merits_payload.get("notes") or [])
         notes.insert(
@@ -141,9 +142,9 @@ class EB1AEvaluator(BaseEvaluator):
                     "outcome": c.get("outcome") or "",
                     "authority": c.get("authority") or "",
                 }
-                for c in similar_for_merits
+                for c in representative_cases
                 if c.get("case_id") or c.get("filename")
-            ][:8],
+            ],
         )
 
         result.top_strengths = [f"{e.criterion_name} ({e.status})" for e in viable][:5]
@@ -180,5 +181,6 @@ class EB1AEvaluator(BaseEvaluator):
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
             "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
             "aao_authority": "AAO non-precedent—non-binding. Not the legal test.",
+            "final_merits_aao_selection": aao_context.get("selection_metadata") or {},
         }
         return result

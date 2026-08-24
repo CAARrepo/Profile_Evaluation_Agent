@@ -11,7 +11,7 @@ import json
 import math
 import re
 from functools import lru_cache
-from typing import Any
+from typing import Any, Sequence
 
 from .config import (
     AAO_AUTHORITY_LABEL,
@@ -30,6 +30,32 @@ from .kb_loader import aao_authority_label, kb_home
 MAX_PER_OUTCOME = 5
 MIN_PER_OUTCOME = 3
 MAX_QUOTE = 280
+FINAL_MERITS_REPRESENTATIVE_LIMIT = 8
+FINAL_MERITS_SELECTION_METHOD = "relevance_balanced_deduplicated"
+_STATUS_PRIORITY = {
+    "strong": 0,
+    "potential": 1,
+    "weak": 2,
+    "not_indicated": 3,
+}
+# Higher weight = more relevant to final-merits themes (impact, acclaim,
+# independent recognition, top-of-field standing, recognition beyond employer).
+_FINAL_MERITS_THEME_WEIGHT = {
+    "eb1a_original_contributions": 5,
+    "eb1a_scholarly_articles": 4,
+    "eb1a_leading_critical_role": 4,
+    "eb1a_high_salary": 3,
+    "eb1a_judging": 3,
+    "eb1a_awards": 2,
+    "eb1a_published_material": 2,
+    "eb1a_membership": 1,
+    "eb1a_artistic_display": 1,
+    "eb1a_commercial_success_performing_arts": 1,
+}
+_MAX_PATTERN_ITEMS = 4
+_MAX_PATTERN_CHARS = 220
+_MAX_PER_CRITERION_INITIAL = 2
+_MAX_PER_CRITERION_FILL = 3
 STOP = {
     "the", "and", "of", "in", "for", "a", "an", "or", "to", "at", "with",
     "on", "as", "by", "from", "this", "that", "petitioner", "beneficiary",
@@ -469,12 +495,9 @@ def attach_eb1a_aao_context(
             intel["rejected_evidence_patterns"][:3]
         )
     evaluation["common_aao_pitfalls"] = pitfalls[:6]
-    evaluation["similar_sustained_cases"] = [
-        {k: v for k, v in c.items() if k != "_score"} for c in sustained[:MAX_PER_OUTCOME]
-    ]
-    evaluation["similar_denied_cases"] = [
-        {k: v for k, v in c.items() if k != "_score"} for c in denied[:MAX_PER_OUTCOME]
-    ]
+    # Keep retrieval _score so final-merits selection can use ranking.
+    evaluation["similar_sustained_cases"] = [dict(c) for c in sustained[:MAX_PER_OUTCOME]]
+    evaluation["similar_denied_cases"] = [dict(c) for c in denied[:MAX_PER_OUTCOME]]
     evaluation["potential_new_evidence_to_develop"] = to_develop
     evaluation["recommended_existing_evidence"] = list(
         evaluation.get("recommended_evidence") or []
@@ -485,3 +508,299 @@ def attach_eb1a_aao_context(
         + evaluation["similar_denied_cases"][:2]
     )
     return evaluation
+
+
+def _as_eval_dict(item: Any) -> dict[str, Any]:
+    if hasattr(item, "model_dump"):
+        return item.model_dump()
+    return dict(item)
+
+
+def _compact_text_list(items: Sequence[Any] | None, *, limit: int = _MAX_PATTERN_ITEMS) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in items or []:
+        text = re.sub(r"\s+", " ", str(item or "")).strip()
+        if not text:
+            continue
+        if len(text) > _MAX_PATTERN_CHARS:
+            text = text[: _MAX_PATTERN_CHARS - 1].rsplit(" ", 1)[0] + "…"
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _case_identity(card: dict[str, Any]) -> str:
+    case_id = str(card.get("case_id") or card.get("decision_number") or "").strip()
+    if case_id:
+        return f"id:{case_id.lower()}"
+    filename = str(card.get("filename") or "").strip().lower().replace("\\", "/")
+    if filename:
+        return f"file:{filename}"
+    date = str(card.get("decision_date") or card.get("date") or "").strip().lower()
+    occupation = str(card.get("occupation") or "").strip().lower()
+    outcome = str(card.get("outcome") or "").strip().lower()
+    quote = re.sub(r"\s+", " ", str(card.get("quote") or "")).strip().lower()[:120]
+    return f"comp:{date}|{occupation}|{outcome}|{quote}"
+
+
+def _outcome_bucket(card: dict[str, Any], *, fallback: str = "other") -> str:
+    raw = str(card.get("outcome") or card.get("outcome_normalized") or "").lower()
+    if "sustain" in raw:
+        return "sustained"
+    if "dismiss" in raw or "denied" in raw:
+        return "dismissed"
+    return fallback if fallback in {"sustained", "dismissed"} else "other"
+
+
+def _card_rank_score(card: dict[str, Any]) -> float:
+    try:
+        return float(card.get("_score") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _criterion_rank_tuple(ev: dict[str, Any]) -> tuple[Any, ...]:
+    status = str(ev.get("status") or "not_indicated")
+    facts = [str(f) for f in (ev.get("applicant_facts") or []) if str(f).strip()]
+    cid = str(ev.get("criterion_id") or "")
+    return (
+        _STATUS_PRIORITY.get(status, 99),
+        -len(facts),
+        -len(ev.get("satisfied_elements") or []),
+        -_FINAL_MERITS_THEME_WEIGHT.get(cid, 1),
+        -sum(len(f) for f in facts),
+        cid,
+    )
+
+
+def _quotes_with_status(cards: Sequence[dict[str, Any]], status: str) -> list[str]:
+    quotes: list[str] = []
+    for card in cards:
+        if str(card.get("evidence_status") or "") != status:
+            continue
+        quote = str(card.get("quote") or "").strip()
+        if quote:
+            quotes.append(quote)
+    return quotes
+
+
+def _pattern_summary(ev: dict[str, Any]) -> dict[str, Any]:
+    sustained = list(ev.get("similar_sustained_cases") or [])
+    denied = list(ev.get("similar_denied_cases") or [])
+    return {
+        "criterion_id": str(ev.get("criterion_id") or ""),
+        "criterion_name": str(ev.get("criterion_name") or ev.get("criterion_id") or ""),
+        "applicant_status": str(ev.get("status") or "not_indicated"),
+        "cases_reviewed": len(sustained) + len(denied),
+        "sustained_cases_reviewed": len(sustained),
+        "dismissed_cases_reviewed": len(denied),
+        "accepted_evidence_patterns": _compact_text_list(
+            _quotes_with_status(sustained, EVIDENCE_EXPLICITLY_ACCEPTED)
+        ),
+        "rejected_evidence_patterns": _compact_text_list(
+            _quotes_with_status(denied, EVIDENCE_EXPLICITLY_REJECTED)
+        ),
+        "common_denial_reasons": _compact_text_list(ev.get("common_aao_pitfalls") or []),
+        "observed_pattern": _compact_text_list(ev.get("observed_aao_pattern") or []),
+        "authority": AAO_AUTHORITY_LABEL,
+    }
+
+
+def _public_representative_card(
+    card: dict[str, Any], matched_criteria: list[str]
+) -> dict[str, Any]:
+    return {
+        "case_id": card.get("case_id") or "",
+        "decision_date": card.get("decision_date") or card.get("date") or "",
+        "filename": card.get("filename") or "",
+        "pdf_page": card.get("pdf_page"),
+        "occupation": card.get("occupation") or "",
+        "outcome": card.get("outcome") or "",
+        "quote": card.get("quote") or "",
+        "evidence_status": card.get("evidence_status") or "",
+        "authority": card.get("authority") or AAO_AUTHORITY_LABEL,
+        "matched_criteria": list(matched_criteria),
+    }
+
+
+def _unique_sort_key(item: dict[str, Any]) -> tuple[Any, ...]:
+    accepted = 1 if item["card"].get("evidence_status") == EVIDENCE_EXPLICITLY_ACCEPTED else 0
+    return (accepted, item["rank_score"], item["decision_date"] or "", item["identity"])
+
+
+def _best_unused(
+    pool: Sequence[dict[str, Any]],
+    selected_ids: set[str],
+    *,
+    outcome: str | None = None,
+    require_outcome: bool = False,
+) -> dict[str, Any] | None:
+    cands = [item for item in pool if item["identity"] not in selected_ids]
+    if outcome:
+        filtered = [item for item in cands if item["outcome_bucket"] == outcome]
+        if filtered:
+            cands = filtered
+        elif require_outcome:
+            return None
+    if not cands:
+        return None
+    cands.sort(key=_unique_sort_key, reverse=True)
+    return cands[0]
+
+
+def _prefer_outcome(selected: Sequence[dict[str, Any]]) -> str | None:
+    sustained = sum(1 for item in selected if item["outcome_bucket"] == "sustained")
+    dismissed = sum(1 for item in selected if item["outcome_bucket"] == "dismissed")
+    if sustained < dismissed:
+        return "sustained"
+    if dismissed < sustained:
+        return "dismissed"
+    return None
+
+
+def build_final_merits_aao_context(
+    evaluations: Sequence[Any],
+    *,
+    limit: int = FINAL_MERITS_REPRESENTATIVE_LIMIT,
+) -> dict[str, Any]:
+    """Build compact AAO context for EB-1A STEP 2 from criterion retrieval.
+
+    Reuses similar_sustained_cases / similar_denied_cases already attached to
+    each CriterionEvaluation. Does not search the AAO catalog again.
+    """
+    limit = max(0, int(limit))
+    evals = [_as_eval_dict(item) for item in evaluations]
+    applicable = [ev for ev in evals if str(ev.get("status") or "") != "not_applicable"]
+    applicable.sort(key=_criterion_rank_tuple)
+    rank_by_id = {str(ev.get("criterion_id") or ""): _criterion_rank_tuple(ev) for ev in applicable}
+
+    pattern_summaries = [_pattern_summary(ev) for ev in applicable]
+
+    raw_cards: list[tuple[str, dict[str, Any], str]] = []
+    for ev in applicable:
+        cid = str(ev.get("criterion_id") or "")
+        for card in ev.get("similar_sustained_cases") or []:
+            raw_cards.append((cid, dict(card), "sustained"))
+        for card in ev.get("similar_denied_cases") or []:
+            raw_cards.append((cid, dict(card), "dismissed"))
+
+    merged: dict[str, dict[str, Any]] = {}
+    for criterion_id, card, origin in raw_cards:
+        identity = _case_identity(card)
+        bucket = _outcome_bucket(card, fallback=origin)
+        candidate = {
+            "identity": identity,
+            "card": card,
+            "matched_criteria": [criterion_id] if criterion_id else [],
+            "outcome_bucket": bucket,
+            "rank_score": _card_rank_score(card),
+            "decision_date": str(card.get("decision_date") or card.get("date") or ""),
+        }
+        existing = merged.get(identity)
+        if existing is None:
+            merged[identity] = candidate
+            continue
+        if criterion_id and criterion_id not in existing["matched_criteria"]:
+            existing["matched_criteria"].append(criterion_id)
+        if _unique_sort_key(candidate) > _unique_sort_key(existing):
+            existing["card"] = card
+            existing["rank_score"] = candidate["rank_score"]
+            existing["decision_date"] = candidate["decision_date"]
+            existing["outcome_bucket"] = bucket
+
+    unique_cases = list(merged.values())
+    for item in unique_cases:
+        item["matched_criteria"] = sorted(
+            {c for c in item["matched_criteria"] if c},
+            key=lambda cid: rank_by_id.get(cid, (99, 0, 0, 0, 0, cid)),
+        )
+        item["home"] = item["matched_criteria"][0] if item["matched_criteria"] else ""
+
+    by_home: dict[str, list[dict[str, Any]]] = {}
+    for item in unique_cases:
+        by_home.setdefault(item["home"], []).append(item)
+
+    selected: list[dict[str, Any]] = []
+    selected_ids: set[str] = set()
+    home_counts: dict[str, int] = {}
+
+    def _add(item: dict[str, Any] | None) -> bool:
+        if item is None or item["identity"] in selected_ids or len(selected) >= limit:
+            return False
+        selected.append(item)
+        selected_ids.add(item["identity"])
+        home_counts[item["home"]] = home_counts.get(item["home"], 0) + 1
+        return True
+
+    for ev in applicable:
+        if len(selected) >= limit:
+            break
+        cid = str(ev.get("criterion_id") or "")
+        pool = by_home.get(cid) or []
+        for outcome in ("sustained", "dismissed"):
+            if home_counts.get(cid, 0) >= _MAX_PER_CRITERION_INITIAL:
+                break
+            _add(_best_unused(pool, selected_ids, outcome=outcome, require_outcome=True))
+
+    while len(selected) < limit:
+        added = False
+        prefer = _prefer_outcome(selected)
+        for ev in applicable:
+            if len(selected) >= limit:
+                break
+            cid = str(ev.get("criterion_id") or "")
+            if home_counts.get(cid, 0) >= _MAX_PER_CRITERION_FILL:
+                continue
+            pool = by_home.get(cid) or []
+            pick = _best_unused(pool, selected_ids, outcome=prefer, require_outcome=bool(prefer))
+            if pick is None and prefer:
+                pick = _best_unused(pool, selected_ids)
+            if _add(pick):
+                added = True
+        if not added:
+            leftovers = [item for item in unique_cases if item["identity"] not in selected_ids]
+            leftovers.sort(key=_unique_sort_key, reverse=True)
+            if prefer:
+                preferred = [item for item in leftovers if item["outcome_bucket"] == prefer]
+                leftovers = preferred + [item for item in leftovers if item not in preferred]
+            if leftovers:
+                _add(leftovers[0])
+                added = True
+            if not added:
+                break
+
+    representative = [
+        _public_representative_card(item["card"], item["matched_criteria"])
+        for item in selected[:limit]
+    ]
+    selected_sustained = sum(1 for item in selected[:limit] if item["outcome_bucket"] == "sustained")
+    selected_dismissed = sum(1 for item in selected[:limit] if item["outcome_bucket"] == "dismissed")
+    represented: list[str] = []
+    for item in selected[:limit]:
+        for cid in item["matched_criteria"]:
+            if cid not in represented:
+                represented.append(cid)
+    represented.sort(key=lambda cid: rank_by_id.get(cid, (99, 0, 0, 0, 0, cid)))
+
+    metadata = {
+        "total_candidate_cards": len(raw_cards),
+        "unique_candidate_cases": len(unique_cases),
+        "selected_case_count": len(representative),
+        "selected_sustained_count": selected_sustained,
+        "selected_dismissed_count": selected_dismissed,
+        "criteria_represented": represented,
+        "deduplicated_case_count": max(0, len(raw_cards) - len(unique_cases)),
+        "selection_limit": limit,
+        "selection_method": FINAL_MERITS_SELECTION_METHOD,
+    }
+    return {
+        "criterion_pattern_summaries": pattern_summaries,
+        "representative_cases": representative,
+        "selection_metadata": metadata,
+    }

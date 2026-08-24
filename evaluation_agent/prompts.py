@@ -116,10 +116,13 @@ Meeting three criteria is a threshold, not an approval.
 
 Rules:
 1. Use only provided applicant facts and criterion results. Do not invent facts.
-2. Legal test is the statute/CFR definition of extraordinary ability and USCIS Policy Manual final-merits factors.
-3. AAO similar cases are NON-PRECEDENT illustrations only.
-4. Address: sustained national or international acclaim; recognition beyond the employer; independent recognition; impact/significance; standing relative to others in the field; career trajectory; quality of the evidence as a whole.
-5. Output VALID JSON only. No markdown fences.
+2. Legal test is the statute/CFR definition of extraordinary ability and USCIS Policy Manual final-merits factors. Evaluate the applicant against the CFR and USCIS Policy Manual.
+3. Criterion AAO pattern summaries may reflect multiple AAO non-precedent decisions. Representative AAO cases are illustrations only. Neither patterns nor cases are the legal test.
+4. AAO similar cases are NON-PRECEDENT and NON-BINDING illustrations only. They are not votes and not an approval rate.
+5. Case counts must not be interpreted as an approval rate or a voting mechanism.
+6. A sustained case does not establish that every credential appearing in its record was accepted. Only evidence_status EXPLICITLY_ACCEPTED may be described as specifically credited by AAO.
+7. Address: sustained national or international acclaim; recognition beyond the employer; independent recognition; impact/significance; standing relative to others in the field; career trajectory; quality of the evidence as a whole.
+8. Output VALID JSON only. No markdown fences.
 """
 
 
@@ -133,7 +136,14 @@ def build_final_merits_user_prompt(
     applicant_facts: list[str],
     profile_classification: dict[str, Any] | None = None,
     similar_cases: list[dict[str, Any]] | None = None,
+    criterion_aao_pattern_summaries: list[dict[str, Any]] | None = None,
+    representative_aao_cases: list[dict[str, Any]] | None = None,
 ) -> str:
+    representative = (
+        representative_aao_cases
+        if representative_aao_cases is not None
+        else similar_cases
+    )
     payload = {
         "task": (
             "STEP 2 — Final merits. Do not stop because three criteria look satisfied. "
@@ -142,6 +152,7 @@ def build_final_merits_user_prompt(
         ),
         "visa_category": visa_category,
         "LEGAL_REQUIREMENT": {
+            "source": "Statute / CFR and USCIS Policy Manual (binding on officers)",
             "central_question": central_question,
             "factors": factors,
             "negative_patterns": negative_patterns,
@@ -149,7 +160,31 @@ def build_final_merits_user_prompt(
         "profile_classification": profile_classification or {},
         "step_1_criterion_results": criterion_results,
         "applicant_facts": applicant_facts,
-        "similar_aao_cases_nonprecedent": similar_cases or [],
+        "criterion_aao_pattern_summaries": criterion_aao_pattern_summaries or [],
+        "representative_aao_cases": representative or [],
+        "aao_context_rules": {
+            "authority": "AAO non-precedent—non-binding",
+            "pattern_summaries": (
+                "May reflect multiple AAO non-precedent decisions. "
+                "Illustrative only. Not the legal test."
+            ),
+            "representative_cases": (
+                "Illustrations only. Non-precedent. Non-binding. "
+                "Not votes. Not an approval rate."
+            ),
+            "legal_test": "Evaluate the applicant against the CFR and USCIS Policy Manual.",
+            "case_counts": (
+                "Do not interpret case counts as an approval rate or a voting mechanism."
+            ),
+            "sustained_record": (
+                "A sustained case does not establish that every credential appearing "
+                "in its record was accepted."
+            ),
+            "credited_evidence": (
+                "Only EXPLICITLY_ACCEPTED evidence may be described as specifically "
+                "credited by AAO. Evidence merely present in a sustained record is not accepted."
+            ),
+        },
         "output_schema": {
             "sustained_acclaim_assessment": "string",
             "independent_recognition": "string",

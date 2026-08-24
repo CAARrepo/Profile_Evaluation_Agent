@@ -168,6 +168,8 @@ class LLMJudge:
         applicant_facts: list[str],
         profile_classification: Optional[dict[str, Any]] = None,
         similar_cases: Optional[list[dict[str, Any]]] = None,
+        criterion_aao_pattern_summaries: Optional[list[dict[str, Any]]] = None,
+        representative_aao_cases: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         user = build_final_merits_user_prompt(
             visa_category=visa_category,
@@ -178,6 +180,8 @@ class LLMJudge:
             applicant_facts=applicant_facts,
             profile_classification=profile_classification,
             similar_cases=similar_cases,
+            criterion_aao_pattern_summaries=criterion_aao_pattern_summaries,
+            representative_aao_cases=representative_aao_cases,
         )
         raw = chat_json(
             system=FINAL_MERITS_SYSTEM_PROMPT,
