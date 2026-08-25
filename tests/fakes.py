@@ -27,7 +27,7 @@ class FakeJudge:
     """Deterministic stand-in for LLMJudge so tests do not require Ollama."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        pass
+        self.last_final_merits_kwargs: dict[str, Any] | None = None
 
     def judge_criterion(
         self,
@@ -154,6 +154,7 @@ class FakeJudge:
         )
 
     def judge_final_merits(self, **kwargs: Any) -> dict[str, Any]:
+        self.last_final_merits_kwargs = kwargs
         results = kwargs.get("criterion_results") or []
         viable = sum(
             1 for r in results if str(r.get("status") or "") in {"strong", "potential"}

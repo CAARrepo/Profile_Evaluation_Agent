@@ -196,13 +196,42 @@ def _best_quote(analysis: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def _public_case_id(card: dict[str, Any]) -> str:
+    """Stable public identifier: case_id, else decision_number."""
+    return str(card.get("case_id") or card.get("decision_number") or "").strip()
+
+
+def strip_internal_aao_fields(value: Any) -> Any:
+    """Drop ranking-only keys such as _score from saved/prompt payloads."""
+    if isinstance(value, dict):
+        return {
+            k: strip_internal_aao_fields(v)
+            for k, v in value.items()
+            if k != "_score"
+        }
+    if isinstance(value, list):
+        return [strip_internal_aao_fields(item) for item in value]
+    return value
+
+
+def sanitize_criterion_evaluation(evaluation: Any) -> Any:
+    """Return a criterion evaluation safe to persist (no internal ranking fields)."""
+    if hasattr(evaluation, "model_copy") and hasattr(evaluation, "model_dump"):
+        return evaluation.model_copy(
+            update=strip_internal_aao_fields(evaluation.model_dump())
+        )
+    if isinstance(evaluation, dict):
+        return strip_internal_aao_fields(evaluation)
+    return evaluation
+
+
 def _source_card(record: dict[str, Any], analysis: dict[str, Any]) -> dict[str, Any]:
     quote = _best_quote(analysis)
     determination = str(analysis.get("determination") or "")
     return {
         "authority": aao_authority_label() or AAO_AUTHORITY_LABEL,
         "role": "illustration_only_not_the_legal_test",
-        "case_id": record.get("decision_number") or record.get("case_id") or "",
+        "case_id": _public_case_id(record),
         "decision_date": record.get("date") or record.get("decision_date") or "",
         "filename": record.get("filename") or "",
         "pdf_page": quote.get("pdf_page"),
@@ -381,7 +410,7 @@ def recommend_evidence_to_develop(
             {
                 "recommendation": (
                     f"Comparable {card.get('occupation') or 'occupation'} case "
-                    f"{card.get('case_id')} ({card.get('decision_date')}) discussed "
+                    f"{_public_case_id(card)} ({card.get('decision_date')}) discussed "
                     f"{criterion_name.lower()} evidence that the current applicant "
                     f"does not appear to have: {quote[:180]}"
                 ),
@@ -390,7 +419,7 @@ def recommend_evidence_to_develop(
                 "evidence_status": status,
                 "how_aao_treated_it": how,
                 "source": {
-                    "case_id": card.get("case_id") or "",
+                    "case_id": _public_case_id(card),
                     "decision_date": card.get("decision_date") or "",
                     "filename": card.get("filename") or "",
                     "pdf_page": card.get("pdf_page"),
@@ -440,7 +469,7 @@ def sources_from_cards(cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for card in cards:
         out.append(
             {
-                "case_id": card.get("case_id") or "",
+                "case_id": _public_case_id(card),
                 "decision_date": card.get("decision_date") or "",
                 "filename": card.get("filename") or "",
                 "pdf_page": card.get("pdf_page"),
@@ -458,10 +487,18 @@ def attach_eb1a_aao_context(
     criterion_id: str,
     applicant_facts: list[str],
     required_elements: list[str],
+    similar: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
-    """Fill similar-case, intelligence, and evidence-development fields."""
-    profile = classify_profile(intake)
-    similar = retrieve_similar_cases(intake, criterion_id, profile=profile)
+    """Fill similar-case, intelligence, and evidence-development fields.
+
+    Pass `similar` from the Step 1 retrieval so this does not search again.
+    Ranking `_score` is kept on attached cards for final-merits selection and
+    must be stripped before the evaluation is saved.
+    """
+    if similar is None:
+        similar = retrieve_similar_cases(
+            intake, criterion_id, profile=classify_profile(intake)
+        )
     intel = compact_intelligence(criterion_id)
     sustained = similar.get("sustained") or []
     denied = similar.get("dismissed") or []
@@ -536,7 +573,7 @@ def _compact_text_list(items: Sequence[Any] | None, *, limit: int = _MAX_PATTERN
 
 
 def _case_identity(card: dict[str, Any]) -> str:
-    case_id = str(card.get("case_id") or card.get("decision_number") or "").strip()
+    case_id = _public_case_id(card)
     if case_id:
         return f"id:{case_id.lower()}"
     filename = str(card.get("filename") or "").strip().lower().replace("\\", "/")
@@ -616,7 +653,7 @@ def _public_representative_card(
     card: dict[str, Any], matched_criteria: list[str]
 ) -> dict[str, Any]:
     return {
-        "case_id": card.get("case_id") or "",
+        "case_id": _public_case_id(card),
         "decision_date": card.get("decision_date") or card.get("date") or "",
         "filename": card.get("filename") or "",
         "pdf_page": card.get("pdf_page"),

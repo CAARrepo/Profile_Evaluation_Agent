@@ -306,8 +306,15 @@ def test_software_evaluation_has_two_steps_and_similar_cases(software_intake: di
     assert selection.get("selection_method") == "relevance_balanced_deduplicated"
     assert selection.get("selection_limit") == 8
     assert selection.get("selected_case_count", 0) <= 8
+    context = result.raw_notes.get("final_merits_aao_context") or {}
+    assert context.get("selection_metadata") == selection
+    assert "criterion_pattern_summaries" in context
+    assert "representative_cases" in context
+    dumped = result.model_dump()
+    assert "_score" not in json.dumps(dumped)
     if result.final_merits.sources:
         assert len(result.final_merits.sources) <= 8
+        assert all("matched_criteria" in src for src in result.final_merits.sources)
 
 
 def test_eb1a_catalog_is_nonprecedent_when_present():
@@ -550,6 +557,8 @@ def test_final_merits_selects_both_sustained_and_dismissed():
     meta = ctx["selection_metadata"]
     assert meta["selected_sustained_count"] >= 1
     assert meta["selected_dismissed_count"] >= 1
+    assert meta["selected_sustained_count"] + meta["selected_dismissed_count"] == meta["selected_case_count"]
+    assert abs(meta["selected_sustained_count"] - meta["selected_dismissed_count"]) <= 1
 
 
 def test_final_merits_respects_selection_limit():
@@ -613,6 +622,7 @@ def test_final_merits_duplicate_across_criteria_has_matched_criteria():
         "eb1a_original_contributions",
         "eb1a_leading_critical_role",
     }
+    assert "_score" not in card
 
 
 def test_final_merits_dedup_falls_back_to_filename_then_composite():
@@ -773,4 +783,60 @@ def test_final_merits_prompt_states_nonprecedent_nonbinding_not_votes():
     assert "criterion_aao_pattern_summaries" in user
     assert "representative_aao_cases" in user
     assert "similar_aao_cases_nonprecedent" not in user
+
+
+def test_final_merits_uses_decision_number_when_case_id_missing():
+    card = _fm_card(case_id="", filename="dec-only.pdf", outcome="sustained")
+    card["decision_number"] = "DEC-99"
+    evals = [
+        _fm_eval(
+            cid="eb1a_original_contributions",
+            name="Original contributions",
+            status="strong",
+            facts=["Independent impact."],
+            sustained=[card],
+        )
+    ]
+    ctx = build_final_merits_aao_context(evals)
+    assert len(ctx["representative_cases"]) == 1
+    assert ctx["representative_cases"][0]["case_id"] == "DEC-99"
+
+
+def test_aao_retrieval_runs_once_per_criterion(monkeypatch, software_intake: dict):
+    import evaluation_agent.eb1a_aao as aao_mod
+    import evaluation_agent.evaluators.eb1a as ev_mod
+
+    real = aao_mod.retrieve_similar_cases
+    calls: list[str] = []
+
+    def wrapped(intake, criterion_id, **kwargs):
+        calls.append(criterion_id)
+        return real(intake, criterion_id, **kwargs)
+
+    monkeypatch.setattr(aao_mod, "retrieve_similar_cases", wrapped)
+    monkeypatch.setattr(ev_mod, "retrieve_similar_cases", wrapped)
+    EvaluationAgent(judge=FakeJudge()).evaluate_intake(software_intake)  # type: ignore[arg-type]
+    assert calls
+    assert len(calls) == len(set(calls))
+    assert len(calls) == 10
+
+
+def test_evaluator_passes_every_applicable_summary_to_final_merits(software_intake: dict):
+    judge = FakeJudge()
+    result = EvaluationAgent(judge=judge).evaluate_intake(software_intake)  # type: ignore[arg-type]
+    kwargs = judge.last_final_merits_kwargs or {}
+    applicable_ids = {c.criterion_id for c in result.criteria if c.status != "not_applicable"}
+    summaries = kwargs.get("criterion_aao_pattern_summaries") or []
+    summary_ids = {s["criterion_id"] for s in summaries}
+    assert summary_ids == applicable_ids
+    context = result.raw_notes["final_merits_aao_context"]
+    assert {s["criterion_id"] for s in context["criterion_pattern_summaries"]} == applicable_ids
+    assert len(context["representative_cases"]) <= FINAL_MERITS_REPRESENTATIVE_LIMIT
+    for card in context["representative_cases"]:
+        assert "matched_criteria" in card
+        assert "_score" not in card
+    for src in result.final_merits.sources:
+        assert "matched_criteria" in src
+    dumped = json.dumps(result.model_dump())
+    assert "_score" not in dumped
 

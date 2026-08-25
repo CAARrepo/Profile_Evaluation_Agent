@@ -15,6 +15,8 @@ from ..eb1a_aao import (
     classify_profile,
     compact_intelligence,
     retrieve_similar_cases,
+    sanitize_criterion_evaluation,
+    strip_internal_aao_fields,
 )
 from ..schema import (
     EvaluationResult,
@@ -53,6 +55,8 @@ class EB1AEvaluator(BaseEvaluator):
                 )
             similar = retrieve_similar_cases(intake, cid, profile=profile)
             intel = compact_intelligence(cid)
+            public_sustained = strip_internal_aao_fields(similar.get("sustained") or [])
+            public_denied = strip_internal_aao_fields(similar.get("dismissed") or [])
             ev = self.llm_evaluate_criterion(
                 intake=intake,
                 criterion_def=cdef,
@@ -60,8 +64,8 @@ class EB1AEvaluator(BaseEvaluator):
                 occupation_note=occupation_note,
                 profile_classification=profile,
                 observed_aao_pattern=intel or None,
-                similar_sustained_cases=similar.get("sustained") or None,
-                similar_denied_cases=similar.get("dismissed") or None,
+                similar_sustained_cases=public_sustained or None,
+                similar_denied_cases=public_denied or None,
             )
             extra = attach_eb1a_aao_context(
                 ev.model_dump(),
@@ -69,6 +73,7 @@ class EB1AEvaluator(BaseEvaluator):
                 criterion_id=cid,
                 applicant_facts=ev.applicant_facts,
                 required_elements=list(cdef.get("required_elements") or []),
+                similar=similar,
             )
             evaluations.append(ev.model_copy(update=extra))
 
@@ -87,6 +92,8 @@ class EB1AEvaluator(BaseEvaluator):
         aao_context = build_final_merits_aao_context(evaluations)
         pattern_summaries = list(aao_context.get("criterion_pattern_summaries") or [])
         representative_cases = list(aao_context.get("representative_cases") or [])
+        evaluations = [sanitize_criterion_evaluation(e) for e in evaluations]
+        result.criteria = evaluations
 
         merits_payload = self.judge.judge_final_merits(
             visa_category="EB-1A",
@@ -141,6 +148,7 @@ class EB1AEvaluator(BaseEvaluator):
                     "pdf_page": c.get("pdf_page"),
                     "outcome": c.get("outcome") or "",
                     "authority": c.get("authority") or "",
+                    "matched_criteria": list(c.get("matched_criteria") or []),
                 }
                 for c in representative_cases
                 if c.get("case_id") or c.get("filename")
@@ -181,6 +189,7 @@ class EB1AEvaluator(BaseEvaluator):
             "mvp_assumption": "Applicant-stated facts assumed true for preliminary evaluation only.",
             "knowledge_sources": self.kb.get("knowledge_base_metadata") or {},
             "aao_authority": "AAO non-precedent—non-binding. Not the legal test.",
+            "final_merits_aao_context": aao_context,
             "final_merits_aao_selection": aao_context.get("selection_metadata") or {},
         }
         return result
