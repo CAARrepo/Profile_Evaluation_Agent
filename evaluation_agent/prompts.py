@@ -254,23 +254,59 @@ def build_niw_prong_user_prompt(
     applicant_facts: list[str],
     information_gaps: list[str],
     profile_context: list[str] | None = None,
+    legal_requirement: list[str] | None = None,
+    observed_aao_pattern: dict[str, Any] | None = None,
+    similar_sustained_cases: list[dict[str, Any]] | None = None,
+    similar_denied_cases: list[dict[str, Any]] | None = None,
+    profile_classification: dict[str, Any] | None = None,
+    aao_illustrative_examples: list[dict[str, Any]] | None = None,
 ) -> str:
+    legal = legal_requirement or []
+    if not legal:
+        concept = prong.get("legal_concept") or ""
+        if concept:
+            legal = [str(concept)]
     payload = {
         "task": (
             "Evaluate this NIW Dhanasar prong for a preliminary profile assessment. "
-            "Use only provided facts; do not invent an endeavor or waiver theory."
+            "Use only provided facts; do not invent an endeavor or waiver theory. "
+            "Score against LEGAL REQUIREMENT (Dhanasar / Policy Manual) first. "
+            "If observed AAO patterns or similar cases are included, they are "
+            "non-precedent illustrations only — do not copy those case outcomes."
         ),
         "visa_category": "EB-2 NIW",
+        "profile_classification": profile_classification or {},
         "profile_context": profile_context or [],
         "applicant_facts": applicant_facts,
         "known_information_gaps": information_gaps,
+        "LEGAL_REQUIREMENT": {
+            "source": (
+                "INA 203(b)(2), 8 CFR 204.5(k), Matter of Dhanasar "
+                "(binding precedent), and USCIS Policy Manual Vol. 6 Part F Ch. 5"
+            ),
+            "required_elements": legal,
+        },
+        "OBSERVED_AAO_PATTERN": observed_aao_pattern or {},
         "prong_knowledge_base": prong,
+        "similar_sustained_cases": similar_sustained_cases or [],
+        "similar_denied_cases": similar_denied_cases or [],
+        "aao_illustrative_examples": aao_illustrative_examples or [],
+        "aao_authority": (
+            "AAO non-precedent—non-binding. Illustrative only. "
+            "Matter of Dhanasar and the USCIS Policy Manual are the legal test. "
+            "Source hierarchy: (1) Statute/CFR (2) Policy Manual "
+            "(3) binding precedent — Dhanasar (4) AAO nonprecedent (5) derived patterns."
+            if (aao_illustrative_examples or similar_sustained_cases or similar_denied_cases)
+            else ""
+        ),
         "output_schema": {
             "status": "strong|potential|weak|not_indicated|not_applicable",
             "confidence": "high|medium|low",
-            "reasoning_summary": "string",
+            "reasoning_summary": "string — separate legal requirement from observed AAO pattern",
             "strengths": ["string"],
             "weaknesses": ["string"],
+            "satisfied_elements": ["string — from LEGAL_REQUIREMENT"],
+            "missing_elements": ["string — from LEGAL_REQUIREMENT"],
             "information_gaps": ["string"],
             "recommended_evidence": ["string"],
         },

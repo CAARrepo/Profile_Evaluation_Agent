@@ -182,6 +182,33 @@ def build_client_content(
             "They are illustrations only. The legal test is the statute, 8 CFR 204.5(h), "
             "and the USCIS Policy Manual."
         )
+    elif category == "EB-2 NIW":
+        for p in evaluation.get("niw_prongs") or []:
+            if not isinstance(p, dict):
+                continue
+            for item in p.get("potential_new_evidence_to_develop") or []:
+                if not isinstance(item, dict):
+                    continue
+                rec = fix_mojibake(str(item.get("recommendation") or ""))
+                disc = str(item.get("disclaimer") or "The applicant does not currently possess this evidence.")
+                how = fix_mojibake(str(item.get("how_aao_treated_it") or ""))
+                src = item.get("source") or {}
+                cite = ""
+                if src.get("case_id") or src.get("filename"):
+                    cite = (
+                        f" [AAO {src.get('case_id') or ''} {src.get('decision_date') or ''} "
+                        f"{src.get('filename') or ''} p.{src.get('pdf_page') or '?'} "
+                        f"{src.get('outcome') or ''}; {item.get('evidence_status') or ''}]"
+                    )
+                line = f"{disc} {rec} {how}{cite}".strip()
+                if line:
+                    potential_dev.append(line)
+        potential_dev = consolidate_evidence(potential_dev, limit=8)
+        aao_trace = (
+            "Comparable AAO decisions cited above are non-precedent and non-binding. "
+            "They are illustrations only. The legal test is INA 203(b)(2), 8 CFR 204.5(k), "
+            "Matter of Dhanasar, and the USCIS Policy Manual."
+        )
 
     return ClientReportContent(
         document_title=title,

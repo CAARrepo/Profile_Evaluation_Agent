@@ -25,6 +25,7 @@ class ProfileClassification(BaseModel):
     occupation: list[str] = Field(default_factory=list)
     specialty: list[str] = Field(default_factory=list)
     occupation_search_tags: list[str] = Field(default_factory=list)
+    niw_track: str = ""
 
 
 class CriterionEvaluation(BaseModel):
@@ -97,6 +98,19 @@ class NIWProngEvaluation(BaseModel):
     weaknesses: list[str] = Field(default_factory=list)
     information_gaps: list[str] = Field(default_factory=list)
     recommended_evidence: list[str] = Field(default_factory=list)
+    aao_illustrative_examples: list[dict[str, Any]] = Field(default_factory=list)
+    satisfied_elements: list[str] = Field(default_factory=list)
+    missing_elements: list[str] = Field(default_factory=list)
+    current_evidence_strengths: list[str] = Field(default_factory=list)
+    current_evidence_weaknesses: list[str] = Field(default_factory=list)
+    common_aao_pitfalls: list[str] = Field(default_factory=list)
+    similar_sustained_cases: list[dict[str, Any]] = Field(default_factory=list)
+    similar_denied_cases: list[dict[str, Any]] = Field(default_factory=list)
+    recommended_existing_evidence: list[str] = Field(default_factory=list)
+    potential_new_evidence_to_develop: list[dict[str, Any]] = Field(default_factory=list)
+    legal_requirement: list[str] = Field(default_factory=list)
+    observed_aao_pattern: list[str] = Field(default_factory=list)
+    sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class EvaluationResult(BaseModel):

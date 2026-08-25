@@ -57,10 +57,12 @@ def test_o1a_aao_catalog_loaded():
     assert aao_authority_label() == AAO_AUTHORITY_LABEL
 
 
-@pytest.mark.parametrize("category", ["EB-2 NIW"])
-def test_categories_without_decisions_return_empty(category: str):
-    assert aao_decisions(category) == []
-    assert find_aao_decisions(category, criterion="Awards") == []
+@pytest.mark.parametrize("category", ["EB-1A", "EB-2 NIW"])
+def test_categories_with_aao_catalogs_are_nonprecedent(category: str):
+    decisions = aao_decisions(category)
+    if not decisions:
+        pytest.skip(f"{category} AAO catalog not built yet")
+    assert all("non-precedent" in (r.get("authority") or "").lower() for r in decisions)
 
 
 def test_find_aao_decisions_filters():

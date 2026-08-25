@@ -142,12 +142,24 @@ class LLMJudge:
         applicant_facts: list[str],
         information_gaps: list[str],
         profile_context: Optional[list[str]] = None,
+        legal_requirement: Optional[list[str]] = None,
+        observed_aao_pattern: Optional[dict[str, Any]] = None,
+        similar_sustained_cases: Optional[list[dict[str, Any]]] = None,
+        similar_denied_cases: Optional[list[dict[str, Any]]] = None,
+        profile_classification: Optional[dict[str, Any]] = None,
+        aao_illustrative_examples: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         user = build_niw_prong_user_prompt(
             prong=prong,
             applicant_facts=applicant_facts,
             information_gaps=information_gaps,
             profile_context=profile_context,
+            legal_requirement=legal_requirement,
+            observed_aao_pattern=observed_aao_pattern,
+            similar_sustained_cases=similar_sustained_cases,
+            similar_denied_cases=similar_denied_cases,
+            profile_classification=profile_classification,
+            aao_illustrative_examples=aao_illustrative_examples,
         )
         raw = chat_json(
             system=CRITERION_SYSTEM_PROMPT,

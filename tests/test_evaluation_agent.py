@@ -85,6 +85,13 @@ def test_niw_evaluation_structure(agent: EvaluationAgent):
     }
     assert result.underlying_eb2.status in {"strong", "potential"}
     assert result.recommended_next_evidence
+    assert result.profile_classification is not None
+    prong1 = next(p for p in result.niw_prongs if p.prong_id == "niw_prong_1")
+    assert isinstance(prong1.similar_sustained_cases, list)
+    assert isinstance(prong1.similar_denied_cases, list)
+    assert isinstance(prong1.potential_new_evidence_to_develop, list)
+    dumped = result.model_dump()
+    assert "_score" not in json.dumps(dumped)
 
 
 def test_category_override(agent: EvaluationAgent):

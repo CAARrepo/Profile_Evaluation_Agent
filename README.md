@@ -132,18 +132,21 @@ knowledge_base/O1A_Knowledge_Base/
 └── 02_AAO_Non_Precedent_Decisions/        51 decisions, filed by field
 ```
 
-`EB2NIW_Knowledge_Base/` follows the same pattern but currently has
-`01_Controlling_Sources/` only. `EB1A_Knowledge_Base/` also has an AAO catalog
-built from the original non-precedent PDFs (read-only archive in
-`EB1A_Knowledge_Base_original/`). Every `*_Knowledge_Base_original/` folder is
-a read-only archive and must not be modified.
+`EB1A_Knowledge_Base/` follows the same pattern, filing AAO PDFs by statutory
+field (Sciences, Business, Arts, Education, Athletics).
+`EB2NIW_Knowledge_Base/` uses NIW tracks instead: **Research**, **Entrepreneurs**,
+and **Directors**. Original non-precedent PDFs stay in the matching
+`*_Knowledge_Base_original/` archive and must not be modified. Matter of
+Dhanasar is **precedent** and belongs with controlling sources, not in the
+NIW non-precedent catalog.
 
 `load_knowledge_base()` merges the CFR criteria with Policy Manual evidence
 guidance. The older `*_evaluation_knowledge_base.json` files are not read.
 For O-1A, each criterion prompt may include up to two **catalog cards**.
 For EB-1A, evaluation retrieves criterion intelligence plus 3–5 similar
 sustained and 3–5 similar dismissed AAO cases (metadata + TF-IDF, never the
-full PDFs). Cards are labeled non-precedent and are not the legal test.
+full PDFs). For EB-2 NIW, the same retrieval runs per Dhanasar prong.
+Cards are labeled non-precedent and are not the legal test.
 
 Rebuild the EB-1A AAO indexes (does not touch the original folder):
 
@@ -151,6 +154,14 @@ Rebuild the EB-1A AAO indexes (does not touch the original folder):
 python tools/eb1a_aao_extract.py
 python tools/eb1a_aao_parse.py
 python tools/eb1a_aao_build_kb.py
+```
+
+Rebuild the EB-2 NIW AAO indexes (does not touch the original folder):
+
+```bash
+python tools/niw_aao_extract.py
+python tools/niw_aao_parse.py
+python tools/niw_aao_build_kb.py
 ```
 
 Accessors live in `evaluation_agent/kb_loader.py`:

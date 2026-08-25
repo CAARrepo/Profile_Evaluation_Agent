@@ -11,10 +11,11 @@ Each category lives in its own folder under knowledge_base/:
     <CATEGORY>_Knowledge_Base_original/             untouched archive copy
 
 Runtime evaluation reads only 01_Controlling_Sources/. The older
-``*_evaluation_knowledge_base.json`` files are not loaded. O-1A and EB-1A
-have AAO decision catalogs under 00_Catalog/; those records are
-non-precedent illustrations only. Catalog accessors return empty results
-when a category has no collected decisions.
+``*_evaluation_knowledge_base.json`` files are not loaded. O-1A, EB-1A,
+and EB-2 NIW have AAO decision catalogs under 00_Catalog/; those records
+are non-precedent illustrations only. Catalog accessors return empty
+results when a category has no collected decisions. Matter of Dhanasar
+is binding precedent and is not stored in the NIW non-precedent catalog.
 """
 
 from __future__ import annotations
