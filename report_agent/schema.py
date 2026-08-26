@@ -21,6 +21,9 @@ class ClientCriterionRow(BaseModel):
     client_status_label: str
     explanation: str = ""
     top_evidence: list[str] = Field(default_factory=list)
+    criterion_number: int = 0
+    existing_documents: list[str] = Field(default_factory=list)
+    outstanding_documents: list[str] = Field(default_factory=list)
 
 
 class ClientReportContent(BaseModel):
@@ -54,6 +57,20 @@ class ClientReportContent(BaseModel):
     firm_case_study_image_caption: str = ""
     firm_timeline_heading: str = ""
     firm_timeline_items: list[str] = Field(default_factory=list)
+    firm_case_study_attribution: str = ""
+    firm_cost_heading: str = ""
+    firm_cost_items: list[str] = Field(default_factory=list)
+    consultation_heading: str = ""
+    consultation_intro: str = ""
+    consultation_items: list[str] = Field(default_factory=list)
+    consultation_url: str = ""
+    consultation_photo: str = ""
+    show_snapshot: bool = True
+    show_status_column: bool = True
+    criterion_overview_intro: str = ""
+    checklist_gaps_heading: str = "Information still needed"
+    checklist_docs_heading: str = "Recommended supporting materials"
+    timeline_section_title: str = "Preparation and Processing Timeline"
     footer_text: str = ""
 
 

@@ -1,6 +1,6 @@
 """Load static firm copy for the client report (rates, case study, timeline).
 
-Source: report_agent/static_copy/AI Initial Evaluation Agent Updates 08182026.docx
+Source: report_agent/static_copy/static_information.docx
 The Word file is the attorney original. Runtime reads firm_inserts.json only.
 """
 
@@ -52,6 +52,11 @@ def load_category_inserts(visa_category: str) -> dict[str, Any]:
     disclosure = str(data.get("disclosure") or "").strip()
     image_rel = str(block.get("case_study_image") or "").strip()
     image_path = (STATIC_COPY_DIR / image_rel).resolve() if image_rel else None
+    photo_rel = str(block.get("consultation_photo") or "").strip()
+    if not photo_rel:
+        matches = sorted(STATIC_COPY_DIR.glob("Asel Williams photo*"))
+        photo_rel = matches[0].name if matches else ""
+    photo_path = (STATIC_COPY_DIR / photo_rel).resolve() if photo_rel else None
     return {
         "approval_rate_line": str(block.get("approval_rate_line") or "").strip(),
         "disclosure": disclosure,
@@ -66,4 +71,16 @@ def load_category_inserts(visa_category: str) -> dict[str, Any]:
         "timeline_items": [
             str(item).strip() for item in (block.get("timeline_items") or []) if str(item).strip()
         ],
+        "case_study_attribution": str(block.get("case_study_attribution") or "").strip(),
+        "cost_heading": str(block.get("cost_heading") or "").strip(),
+        "cost_items": [
+            str(item).strip() for item in (block.get("cost_items") or []) if str(item).strip()
+        ],
+        "consultation_heading": str(block.get("consultation_heading") or "").strip(),
+        "consultation_intro": str(block.get("consultation_intro") or "").strip(),
+        "consultation_items": [
+            str(item).strip() for item in (block.get("consultation_items") or []) if str(item).strip()
+        ],
+        "consultation_url": str(block.get("consultation_url") or "").strip(),
+        "consultation_photo": str(photo_path) if photo_path and photo_path.is_file() else "",
     }

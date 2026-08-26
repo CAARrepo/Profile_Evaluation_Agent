@@ -1,5 +1,5 @@
 {
-  "source_document": "AI Initial Evaluation Agent Updates 08182026.docx",
+    "source_document": "static_information.docx",
   "disclosure": "Prior results do not guarantee a similar outcome. Attorney advertising.",
   "categories": {
     "O-1A": {
@@ -46,14 +46,41 @@
         "I have now recommended that Patrick start building his EB-1A case as a long-term solution. Three years in the United States on O-1A status gives him sufficient time to strengthen the case, file it, and potentially obtain approval.",
         "Since Patrick was born in the U.K., the EB-1A priority date is always current for him."
       ],
-      "timeline_heading": "O-1A Application Preparation and Processing Times",
+      "timeline_heading": "O-1A Processing Times and Costs",
       "timeline_items": [
         "Case preparation by a law firm: 1–3 months (depending on the readiness of the evidence).",
         "E-filing: Immediate; the petition is registered by USCIS on the same day.",
         "Premium processing: 15 business days. USCIS is issuing AI-generated RFEs more frequently now, so processing may be delayed if an RFE is issued. USCIS typically gives 90 days to respond to an RFE. The premium processing clock restarts when USCIS receives the RFE response, which is also filed electronically.",
         "RFE response preparation and submission timeline: Approximately 1 month.",
         "Total O-1A preparation and processing time: Approximately 1–5 months."
-      ]
+      ],
+      "case_study_attribution": "Story is being narrated by Asel Williams, Esq., Immigration Attorney at Williams Law",
+      "cost_heading": "O-1A Costs",
+      "cost_items": [
+        "Legal Fees: $6,000 flat, one-time fee.",
+        "100% legal fee refund guarantee if the O-1A petition is denied. *Terms apply.",
+        "Government Filing Fees: $3,795 — Small employer with 25 or fewer full-time employees.",
+        "Government Filing Fees: $4,620 — Regular employer with more than 25 full-time employees.",
+        "Premium Processing Fee is included. Government filing fees are non-refundable.",
+        "Total O-1A Cost: $9,795 — Small employer.",
+        "Total O-1A Cost: $10,620 — Regular employer.",
+        "Note: Both legal and government filing fees may be paid by the employee; USCIS does not prohibit this.",
+        "U.S. Agent Fees: Some eligible O-1A applicants choose to file through a U.S. agent. This option may work well for individuals whose U.S. employers are unwilling to handle the immigration filing, who work for multiple companies, or who are self-employed.",
+        "Optional U.S. Agent Fee: $4,000 flat, one-time fee covering the initial three-year O-1A period.",
+        "100% U.S. agent fee refund guarantee if the O-1A petition is denied. *Terms apply.",
+        "Total O-1A Cost with U.S. agent: $13,795. Includes legal fees, USCIS filing fees for a small employer, and U.S. agent fees.",
+        "If you are interested in the U.S. agent sponsorship structure, please contact us.",
+        "Important: Potential additional fees may apply and are not included above: PR/publication fees, expert opinion letter fees, translation fees, and labor consultation fees."
+      ],
+      "consultation_heading": "Book a free consultation",
+      "consultation_intro": "Book a free video consultation to discuss your O-1A case with an immigration attorney.",
+      "consultation_items": [
+        "Duration: 15 minutes",
+        "Format: Zoom video consultation",
+        "Immigration Attorney: Asel Williams, Esq.",
+        "Limit: One complimentary 15-minute video consultation per person."
+      ],
+      "consultation_url": "https://calendly.com/aselwilliams/consultation"
     },
     "EB-1A": {
       "approval_rate_line": "EB-1A approval rate: 100%",

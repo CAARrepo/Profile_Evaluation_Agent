@@ -5,7 +5,13 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from .config import DEFAULT_DISCLAIMER
+from .config import (
+    DEFAULT_DISCLAIMER,
+    O1A_CHALLENGING_CRITERIA,
+    O1A_CHALLENGING_NOTE,
+    O1A_CLIENT_DISCLAIMER,
+    O1A_DEFAULT_PRIORITY_OPPORTUNITIES,
+)
 from .firm_inserts import load_category_inserts
 from .schema import ClientCriterionRow, ClientReportContent, InitialReport
 from .text_utils import (
@@ -41,9 +47,21 @@ def build_client_content(
             continue
         name = fix_mojibake(str(c.get("criterion_name") or c.get("criterion_id") or ""))
         explanation = client_criterion_explanation(c)
+        cid = str(c.get("criterion_id") or "")
+        if category == "O-1A" and cid in O1A_CHALLENGING_CRITERIA:
+            if O1A_CHALLENGING_NOTE not in explanation:
+                explanation = (explanation + " " + O1A_CHALLENGING_NOTE).strip()
         top_evidence = consolidate_evidence(
             [str(x) for x in (c.get("recommended_evidence") or [])],
             limit=5,
+        )
+        existing_docs = consolidate_evidence(
+            [str(x) for x in (c.get("applicant_facts") or [])],
+            limit=6,
+        )
+        outstanding_docs = consolidate_evidence(
+            [str(x) for x in (c.get("information_gaps") or [])] + list(top_evidence),
+            limit=6,
         )
         rows.append(
             ClientCriterionRow(
@@ -52,6 +70,9 @@ def build_client_content(
                 client_status_label=client_status_label(status),
                 explanation=explanation,
                 top_evidence=top_evidence,
+                criterion_number=len(rows) + 1,
+                existing_documents=existing_docs,
+                outstanding_documents=outstanding_docs,
             )
         )
         if status in {"strong", "potential"}:
@@ -122,6 +143,14 @@ def build_client_content(
     disclaimer = fix_mojibake(
         str(evaluation.get("disclaimer") or report.disclaimer or DEFAULT_DISCLAIMER)
     )
+    if category == "O-1A":
+        disclaimer = O1A_CLIENT_DISCLAIMER
+        existing_blob = " ".join(priority_opps).lower()
+        for item in O1A_DEFAULT_PRIORITY_OPPORTUNITIES:
+            key = "published material" if "published" in item.lower() else "judging"
+            if key not in existing_blob:
+                priority_opps.append(item)
+                existing_blob += " " + item.lower()
     if "attorney" not in disclaimer.lower():
         disclaimer = (
             disclaimer
@@ -245,5 +274,35 @@ def build_client_content(
         firm_case_study_image_caption=inserts.get("case_study_image_caption", ""),
         firm_timeline_heading=inserts.get("timeline_heading", ""),
         firm_timeline_items=list(inserts.get("timeline_items") or []),
+        firm_case_study_attribution=inserts.get("case_study_attribution", ""),
+        firm_cost_heading=inserts.get("cost_heading", ""),
+        firm_cost_items=list(inserts.get("cost_items") or []),
+        consultation_heading=inserts.get("consultation_heading", ""),
+        consultation_intro=inserts.get("consultation_intro", ""),
+        consultation_items=list(inserts.get("consultation_items") or []),
+        consultation_url=inserts.get("consultation_url", ""),
+        consultation_photo=inserts.get("consultation_photo", ""),
+        show_snapshot=category != "O-1A",
+        show_status_column=category != "O-1A",
+        criterion_overview_intro=(
+            "The statuses below reflect preliminary determinations and are subject to further "
+            "review and discussion with an immigration attorney."
+            if category == "O-1A"
+            else (
+                "Statuses below are preliminary labels for discussion only. "
+                "They do not mean a criterion has been legally satisfied."
+            )
+        ),
+        checklist_gaps_heading=(
+            "Missing information" if category == "O-1A" else "Information still needed"
+        ),
+        checklist_docs_heading=(
+            "Missing documents" if category == "O-1A" else "Recommended supporting materials"
+        ),
+        timeline_section_title=(
+            "Processing Times and Costs"
+            if category == "O-1A"
+            else "Preparation and Processing Timeline"
+        ),
         footer_text="",
     )

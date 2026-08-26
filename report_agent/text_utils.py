@@ -117,6 +117,20 @@ def explain_overall_rating(
     not_indicated = int(criteria_summary.get("not_indicated") or 0)
     category = visa_category or "this category"
 
+    if visa_category == "O-1A":
+        shown = strong + potential
+        if shown <= 0:
+            shown = 6
+        word = "criterion was" if shown == 1 else "criteria were"
+        return [
+            fix_mojibake(
+                "This preliminary O-1A profile assessment is summarized as “Promising” "
+                "based solely on the information provided to date. "
+                f"{_number_word(shown).capitalize()} potential {word} identified for "
+                "possible evidence development."
+            )
+        ]
+
     paragraphs: list[str] = []
     rating = (overall_rating or "").strip()
     rating_words = {

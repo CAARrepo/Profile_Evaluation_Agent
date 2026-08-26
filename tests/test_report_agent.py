@@ -102,12 +102,20 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     assert "<b>" not in text
     assert "</b>" not in text
     # Profile sections plus the static firm case study
-    assert 1 <= len(reader.pages) <= 16
+    assert 1 <= len(reader.pages) <= 22
     assert "O-1A approval rate: 100%" in text
     assert "Prior results do not guarantee a similar outcome" in text
     assert "Attorney advertising" in text
     assert "Patrick" in text
     assert "Total O-1A preparation and processing time" in text
+    assert "Processing Times and Costs" in text
+    assert "Asel Williams" in text
+    assert "$6,000" in text
+    assert "calendly.com/aselwilliams/consultation" in text
+    assert "Assessment Snapshot" not in text
+    assert "Preliminary status" not in text
+    assert "This report is based on preliminary information" in text
+    assert "Missing information" in markdown or "Missing documents" in markdown
     assert "Narendar" not in text
     assert "Christian" not in text
     assert "O-1A approval rate: 100%" in markdown
@@ -140,15 +148,17 @@ def test_zero_strong_multiple_potential_clarification(tmp_path: Path):
 
     _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
     joined = " ".join(client.overall_assessment_paragraphs)
-    assert "Six criteria were identified for possible evidence development" in joined
-    assert "None is currently assessed as strongly supported" in joined
-    assert "does not mean that the O-1A criterion has been satisfied" in joined
+    assert "Six potential criteria were identified for possible evidence development" in joined
+    assert "Promising" in joined
+    assert "None is currently assessed as strongly supported" not in joined
+    assert "does not mean that the O-1A criterion has been satisfied" not in joined
 
     pdf_path = tmp_path / "promising_clarification.pdf"
     write_client_pdf(client, pdf_path)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(str(pdf_path)).pages)
-    assert "Six criteria were identified for possible evidence development" in text
-    assert "does not mean that the O-1A criterion has been satisfied" in text
+    assert "Six potential criteria were identified for possible evidence development" in text
+    assert "Promising" in text
+    assert "Assessment Snapshot" not in text
 
 
 def test_evidence_consolidated_and_no_mid_sentence_cut():

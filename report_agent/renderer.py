@@ -177,30 +177,43 @@ def render_markdown(
         lines.append(para)
         lines.append("")
 
-    snap = client.snapshot
-    lines.extend(
-        [
-            "## 3. Assessment Snapshot",
-            "",
-            f"- Strong: {snap.get('strong', 0)}",
-            f"- Potential: {snap.get('potential', 0)}",
-            f"- Weak: {snap.get('weak', 0)}",
-            f"- Not indicated: {snap.get('not_indicated', 0)}",
-            "",
-            "## 4. Criterion-by-Criterion Overview",
-            "",
-        ]
-    )
-    if client.step1_heading:
-        lines[-3] = f"## 4. {client.step1_heading}"
+    if client.show_snapshot:
+        snap = client.snapshot
+        lines.extend(
+            [
+                "## 3. Assessment Snapshot",
+                "",
+                f"- Strong: {snap.get('strong', 0)}",
+                f"- Potential: {snap.get('potential', 0)}",
+                f"- Weak: {snap.get('weak', 0)}",
+                f"- Not indicated: {snap.get('not_indicated', 0)}",
+                "",
+            ]
+        )
+
+    overview_n = "3" if not client.show_snapshot else "4"
+    overview_title = client.step1_heading or "Criterion-by-Criterion Overview"
+    lines.extend([f"## {overview_n}. {overview_title}", ""])
+    if client.criterion_overview_intro:
+        lines.append(client.criterion_overview_intro)
+        lines.append("")
     for row in client.criterion_rows:
         lines.append(f"### {row.criterion_name}")
         lines.append("")
-        lines.append(f"- **Internal status:** `{row.internal_status}`")
-        lines.append(f"- **Client label:** {row.client_status_label}")
+        if client.show_status_column:
+            lines.append(f"- **Internal status:** `{row.internal_status}`")
+            lines.append(f"- **Client label:** {row.client_status_label}")
         if row.explanation:
             lines.append(f"- **Preliminary view:** {row.explanation}")
-        if row.top_evidence:
+        if row.existing_documents:
+            lines.append("- **Existing documents:**")
+            for e in row.existing_documents:
+                lines.append(f"  - {e}")
+        if row.outstanding_documents:
+            lines.append("- **Outstanding documents:**")
+            for e in row.outstanding_documents:
+                lines.append(f"  - {e}")
+        if row.top_evidence and client.show_status_column:
             lines.append("- **Priority evidence:**")
             for e in row.top_evidence:
                 lines.append(f"  - {e}")
@@ -221,12 +234,12 @@ def render_markdown(
 
     lines.extend(["## 6. Priority Evidence Checklist", ""])
     if client.information_still_needed:
-        lines.append("**Information still needed**")
+        lines.append(f"**{client.checklist_gaps_heading or 'Information still needed'}**")
         lines.append("")
         lines.extend([f"- {g}" for g in client.information_still_needed])
         lines.append("")
     if client.priority_evidence_checklist:
-        lines.append("**Recommended supporting materials**")
+        lines.append(f"**{client.checklist_docs_heading or 'Recommended supporting materials'}**")
         lines.append("")
         lines.extend([f"- {e}" for e in client.priority_evidence_checklist])
         lines.append("")
@@ -253,6 +266,9 @@ def render_markdown(
         if client.firm_case_study_heading:
             lines.append(f"**{client.firm_case_study_heading}**")
             lines.append("")
+        if client.firm_case_study_attribution:
+            lines.append(client.firm_case_study_attribution)
+            lines.append("")
         if client.firm_case_study_title:
             lines.append(f"### {client.firm_case_study_title}")
             lines.append("")
@@ -268,16 +284,33 @@ def render_markdown(
             lines.append(f"*[{caption}]*")
             lines.append("")
 
-    if client.firm_timeline_items:
-        lines.extend(["## 9. Preparation and Processing Timeline", ""])
+    if client.firm_timeline_items or client.firm_cost_items:
+        lines.extend([f"## 9. {client.timeline_section_title or 'Preparation and Processing Timeline'}", ""])
         if client.firm_timeline_heading:
             lines.append(f"**{client.firm_timeline_heading}**")
             lines.append("")
         lines.extend([f"- {item}" for item in client.firm_timeline_items])
         lines.append("")
+        if client.firm_cost_items:
+            if client.firm_cost_heading:
+                lines.append(f"**{client.firm_cost_heading}**")
+                lines.append("")
+            lines.extend([f"- {item}" for item in client.firm_cost_items])
+            lines.append("")
 
-    lines.extend(["## 10. Recommended Next Steps", ""])
-    for i, step in enumerate(client.recommended_next_steps, start=1):
-        lines.append(f"{i}. {step}")
-    lines.append("")
+    if client.consultation_heading or client.consultation_url:
+        lines.extend([f"## 10. {client.consultation_heading or 'Book a free consultation'}", ""])
+        if client.consultation_intro:
+            lines.append(client.consultation_intro)
+            lines.append("")
+        lines.extend([f"- {item}" for item in client.consultation_items])
+        if client.consultation_url:
+            lines.append(f"- {client.consultation_url}")
+        lines.append("")
+
+    if client.recommended_next_steps:
+        lines.extend(["## Recommended Next Steps", ""])
+        for i, step in enumerate(client.recommended_next_steps, start=1):
+            lines.append(f"{i}. {step}")
+        lines.append("")
     return "\n".join(lines)

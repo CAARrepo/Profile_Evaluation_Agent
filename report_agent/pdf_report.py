@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from reportlab.lib import colors
+from reportlab.lib.colors import HexColor, black, white
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     HRFlowable,
     Image as PdfImage,
@@ -25,13 +25,14 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from .config import BRAND_CHARCOAL, BRAND_LAVENDER, BRAND_NAVY, BRAND_PAPER
 from .schema import ClientReportContent
 from .text_utils import fix_mojibake
 
-_NAVY = colors.Color(0.10, 0.18, 0.32)
-_SLATE = colors.Color(0.25, 0.30, 0.36)
-_RULE = colors.Color(0.75, 0.78, 0.82)
-_ROW_ALT = colors.Color(0.96, 0.97, 0.98)
+_NAVY = HexColor(f"#{BRAND_NAVY}")
+_SLATE = HexColor(f"#{BRAND_CHARCOAL}")
+_RULE = HexColor(f"#{BRAND_LAVENDER}")
+_ROW_ALT = HexColor(f"#{BRAND_PAPER}")
 
 
 def _register_fonts() -> tuple[str, str]:
@@ -77,6 +78,16 @@ def _p(text: str, style: ParagraphStyle) -> Paragraph:
     return Paragraph(safe, style)
 
 
+def _link_p(url: str, style: ParagraphStyle) -> Paragraph:
+    safe = (
+        fix_mojibake(url)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return Paragraph(f'<link href="{safe}">{safe}</link>', style)
+
+
 def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
     base = getSampleStyleSheet()
     return {
@@ -116,7 +127,7 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             fontName=font,
             fontSize=9.5,
             leading=13,
-            textColor=colors.black,
+            textColor=black,
             alignment=TA_JUSTIFY,
             spaceAfter=6,
         ),
@@ -126,7 +137,7 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             fontName=font,
             fontSize=9.5,
             leading=12.5,
-            textColor=colors.black,
+            textColor=black,
             leftIndent=4,
         ),
         "table_header": ParagraphStyle(
@@ -135,7 +146,7 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             fontName=font_bold,
             fontSize=8,
             leading=10,
-            textColor=colors.white,
+            textColor=white,
         ),
         "table_cell": ParagraphStyle(
             "ReportTD",
@@ -143,7 +154,7 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             fontName=font,
             fontSize=8,
             leading=10.5,
-            textColor=colors.black,
+            textColor=black,
         ),
         "footer": ParagraphStyle(
             "ReportFooter",
@@ -241,6 +252,13 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
     )
 
     story: list = []
+    section = 0
+
+    def _heading(title: str) -> None:
+        nonlocal section
+        section += 1
+        story.append(_p(f"{section}. {title}", styles["h1"]))
+
     story.append(_p(content.document_title, styles["title"]))
     story.append(HRFlowable(width="100%", thickness=1, color=_NAVY, spaceAfter=8))
     story.append(_p(f"Applicant: {content.applicant_name}", styles["meta"]))
@@ -250,76 +268,102 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
         story.append(_p(f"Case reference: {content.case_id}", styles["meta"]))
     story.append(Spacer(1, 6))
 
-    story.append(_p("1. Important Preliminary Disclaimer", styles["h1"]))
+    _heading("Important Preliminary Disclaimer")
     story.append(_p(content.disclaimer, styles["body"]))
 
-    story.append(_p("2. Executive Summary", styles["h1"]))
+    _heading("Executive Summary")
     for para in content.overall_assessment_paragraphs:
         story.append(_p(para, styles["body"]))
 
-    story.append(_p("3. Assessment Snapshot", styles["h1"]))
-    snap = content.snapshot
-    snap_data = [
-        [
-            _p("Strong", styles["table_header"]),
-            _p("Potential", styles["table_header"]),
-            _p("Weak", styles["table_header"]),
-            _p("Not indicated", styles["table_header"]),
-        ],
-        [
-            _p(str(snap.get("strong", 0)), styles["table_cell"]),
-            _p(str(snap.get("potential", 0)), styles["table_cell"]),
-            _p(str(snap.get("weak", 0)), styles["table_cell"]),
-            _p(str(snap.get("not_indicated", 0)), styles["table_cell"]),
-        ],
-    ]
-    snap_table = Table(snap_data, colWidths=[1.6 * inch, 1.6 * inch, 1.6 * inch, 1.7 * inch])
-    snap_table.setStyle(
-        TableStyle(
+    if content.show_snapshot:
+        _heading("Assessment Snapshot")
+        snap = content.snapshot
+        snap_data = [
             [
-                ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
-                ("BACKGROUND", (0, 1), (-1, 1), _ROW_ALT),
-                ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
-                ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ]
-        )
-    )
-    story.append(snap_table)
-    story.append(Spacer(1, 8))
-
-    story.append(_p(content.step1_heading or "4. Criterion-by-Criterion Overview", styles["h1"]))
-    story.append(
-        _p(
-            "Statuses below are preliminary labels for discussion only. "
-            "They do not mean a criterion has been legally satisfied.",
-            styles["body"],
-        )
-    )
-
-    header = [
-        _p("Criterion", styles["table_header"]),
-        _p("Preliminary status", styles["table_header"]),
-        _p("Explanation", styles["table_header"]),
-        _p("Priority evidence", styles["table_header"]),
-    ]
-    table_data = [header]
-    for i, row in enumerate(content.criterion_rows):
-        evidence = ", ".join(row.top_evidence[:5]) if row.top_evidence else "—"
-        table_data.append(
+                _p("Strong", styles["table_header"]),
+                _p("Potential", styles["table_header"]),
+                _p("Weak", styles["table_header"]),
+                _p("Not indicated", styles["table_header"]),
+            ],
             [
-                _p(row.criterion_name, styles["table_cell"]),
-                _p(row.client_status_label, styles["table_cell"]),
-                _p(row.explanation or "—", styles["table_cell"]),
-                _p(evidence, styles["table_cell"]),
-            ]
+                _p(str(snap.get("strong", 0)), styles["table_cell"]),
+                _p(str(snap.get("potential", 0)), styles["table_cell"]),
+                _p(str(snap.get("weak", 0)), styles["table_cell"]),
+                _p(str(snap.get("not_indicated", 0)), styles["table_cell"]),
+            ],
+        ]
+        snap_table = Table(snap_data, colWidths=[1.6 * inch, 1.6 * inch, 1.6 * inch, 1.7 * inch])
+        snap_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
+                    ("BACKGROUND", (0, 1), (-1, 1), _ROW_ALT),
+                    ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ]
+            )
         )
+        story.append(snap_table)
+        story.append(Spacer(1, 8))
 
-    col_widths = [1.45 * inch, 1.55 * inch, 2.35 * inch, 1.55 * inch]
+    overview_title = content.step1_heading or "Criterion-by-Criterion Overview"
+    if not overview_title[:1].isdigit():
+        _heading(overview_title)
+    else:
+        story.append(_p(overview_title, styles["h1"]))
+    intro = content.criterion_overview_intro or (
+        "Statuses below are preliminary labels for discussion only. "
+        "They do not mean a criterion has been legally satisfied."
+    )
+    story.append(_p(intro, styles["body"]))
+
+    if content.show_status_column:
+        header = [
+            _p("Criterion", styles["table_header"]),
+            _p("Preliminary status", styles["table_header"]),
+            _p("Explanation", styles["table_header"]),
+            _p("Priority evidence", styles["table_header"]),
+        ]
+        table_data = [header]
+        for row in content.criterion_rows:
+            evidence = ", ".join(row.top_evidence[:5]) if row.top_evidence else "—"
+            table_data.append(
+                [
+                    _p(row.criterion_name, styles["table_cell"]),
+                    _p(row.client_status_label, styles["table_cell"]),
+                    _p(row.explanation or "—", styles["table_cell"]),
+                    _p(evidence, styles["table_cell"]),
+                ]
+            )
+        col_widths = [1.45 * inch, 1.55 * inch, 2.35 * inch, 1.55 * inch]
+    else:
+        header = [
+            _p("Criterion", styles["table_header"]),
+            _p("Explanation", styles["table_header"]),
+            _p("Existing documents", styles["table_header"]),
+            _p("Outstanding documents", styles["table_header"]),
+        ]
+        table_data = [header]
+        for row in content.criterion_rows:
+            number = row.criterion_number or 0
+            label = f"{number}. {row.criterion_name}" if number else row.criterion_name
+            existing = "; ".join(row.existing_documents[:6]) if row.existing_documents else "—"
+            outstanding = "; ".join(row.outstanding_documents[:6]) if row.outstanding_documents else "—"
+            table_data.append(
+                [
+                    _p(label, styles["table_cell"]),
+                    _p(row.explanation or "—", styles["table_cell"]),
+                    _p(existing, styles["table_cell"]),
+                    _p(outstanding, styles["table_cell"]),
+                ]
+            )
+        col_widths = [1.45 * inch, 2.35 * inch, 1.55 * inch, 1.55 * inch]
+
     crit_table = Table(table_data, colWidths=col_widths, repeatRows=1)
     style_cmds = [
         ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
@@ -348,7 +392,7 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
         for para in content.step2_paragraphs:
             story.append(_p(para, styles["body"]))
 
-    story.append(_p("5. Priority Opportunities", styles["h1"]))
+    _heading("Priority Opportunities")
     if content.priority_opportunities:
         story.append(
             ListFlowable(
@@ -363,9 +407,9 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
     else:
         story.append(_p("No priority opportunities were identified from the current record.", styles["body"]))
 
-    story.append(_p("6. Priority Evidence Checklist", styles["h1"]))
+    _heading("Priority Evidence Checklist")
     if content.information_still_needed:
-        story.append(_p("Information still needed", styles["section_label"]))
+        story.append(_p(content.checklist_gaps_heading or "Information still needed", styles["section_label"]))
         story.append(
             ListFlowable(
                 [
@@ -377,7 +421,7 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
             )
         )
     if content.priority_evidence_checklist:
-        story.append(_p("Recommended supporting materials", styles["section_label"]))
+        story.append(_p(content.checklist_docs_heading or "Recommended supporting materials", styles["section_label"]))
         story.append(
             ListFlowable(
                 [
@@ -415,16 +459,18 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
         )
 
     if content.firm_approval_rate_line or content.firm_results_disclosure:
-        story.append(_p("7. Past Results in This Category", styles["h1"]))
+        _heading("Past Results in This Category")
         if content.firm_approval_rate_line:
             story.append(_p(content.firm_approval_rate_line, styles["body"]))
         if content.firm_results_disclosure:
             story.append(_p(content.firm_results_disclosure, styles["body"]))
 
     if content.firm_case_study_title or content.firm_case_study_paragraphs:
-        story.append(_p("8. Example of an Approved Case in This Category", styles["h1"]))
+        _heading("Example of an Approved Case in This Category")
         if content.firm_case_study_heading:
             story.append(_p(content.firm_case_study_heading, styles["section_label"]))
+        if content.firm_case_study_attribution:
+            story.append(_p(content.firm_case_study_attribution, styles["body"]))
         if content.firm_case_study_title:
             story.append(_p(content.firm_case_study_title, styles["h2"]))
         for para in content.firm_case_study_paragraphs:
@@ -441,20 +487,54 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
                 image_bits.append(_p(content.firm_case_study_image_caption, styles["caption"]))
             story.append(KeepTogether(image_bits))
 
-    if content.firm_timeline_items:
-        story.append(_p("9. Preparation and Processing Timeline", styles["h1"]))
+    if content.firm_timeline_items or content.firm_cost_items:
+        _heading(content.timeline_section_title or "Preparation and Processing Timeline")
         if content.firm_timeline_heading:
             story.append(_p(content.firm_timeline_heading, styles["section_label"]))
-        story.append(
-            ListFlowable(
-                [
-                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                    for item in content.firm_timeline_items
-                ],
-                bulletType="bullet",
-                start="•",
+        if content.firm_timeline_items:
+            story.append(
+                ListFlowable(
+                    [
+                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                        for item in content.firm_timeline_items
+                    ],
+                    bulletType="bullet",
+                    start="•",
+                )
             )
-        )
+        if content.firm_cost_items:
+            if content.firm_cost_heading:
+                story.append(_p(content.firm_cost_heading, styles["section_label"]))
+            story.append(
+                ListFlowable(
+                    [
+                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                        for item in content.firm_cost_items
+                    ],
+                    bulletType="bullet",
+                    start="•",
+                )
+            )
+
+    if content.consultation_heading or content.consultation_url:
+        _heading(content.consultation_heading or "Book a free consultation")
+        if content.consultation_photo and Path(content.consultation_photo).is_file():
+            story.append(_fitted_image(content.consultation_photo, 1.6 * inch, 1.6 * inch))
+        if content.consultation_intro:
+            story.append(_p(content.consultation_intro, styles["body"]))
+        if content.consultation_items:
+            story.append(
+                ListFlowable(
+                    [
+                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
+                        for item in content.consultation_items
+                    ],
+                    bulletType="bullet",
+                    start="•",
+                )
+            )
+        if content.consultation_url:
+            story.append(_link_p(content.consultation_url, styles["body"]))
 
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
     return output_path
