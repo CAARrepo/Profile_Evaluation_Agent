@@ -91,6 +91,70 @@ def consolidate_evidence(items: list[str], limit: int = 12) -> list[str]:
     return out
 
 
+_UUID_FILE_PREFIX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-",
+    re.I,
+)
+_SOURCE_FACT = re.compile(
+    r"^Source\s+(?P<source>[\w /|-]+)\s*\((?P<ref>[^)]+)\)\s*:\s*(?P<body>.*)$",
+    re.I | re.S,
+)
+_APPLICANT_FACT = re.compile(
+    r"^Applicant (?:states|is unsure but states)\s*\((?P<key>[^)]+)\)\s*:\s*(?P<body>.*)$",
+    re.I | re.S,
+)
+
+
+def human_document_name(reference: str) -> str:
+    """Turn a stored PDF path into a short client-facing label."""
+    name = str(reference or "").replace("\\", "/").split("/")[-1].strip()
+    name = _UUID_FILE_PREFIX.sub("", name)
+    name = re.sub(r"\.(pdf|docx?|png|jpe?g|txt)$", "", name, flags=re.I)
+    name = name.replace("_", " ").replace("-", " ")
+    return " ".join(name.split())
+
+
+def _one_client_line(text: str, max_chars: int = 180) -> str:
+    cleaned = " ".join(fix_mojibake(text or "").replace("…", "...").split())
+    if "..." in cleaned:
+        cleaned = cleaned.split("...")[0].strip()
+    if not cleaned:
+        return ""
+    line = complete_sentences(cleaned, max_sentences=1) or cleaned
+    if len(line) <= max_chars:
+        return line
+    cut = line[:max_chars].rsplit(" ", 1)[0].rstrip(".,;:")
+    return cut
+
+
+def client_existing_document_line(text: str) -> str:
+    """PDF table cells need short labels, not dumped PDF body text."""
+    cleaned = " ".join(fix_mojibake(text or "").split())
+    if not cleaned:
+        return ""
+    source_match = _SOURCE_FACT.match(cleaned)
+    if source_match:
+        source = (source_match.group("source") or "").strip().lower()
+        ref = (source_match.group("ref") or "").strip()
+        if source == "document" or ref.lower().endswith((".pdf", ".docx", ".doc")):
+            return human_document_name(ref)
+        return _one_client_line(source_match.group("body") or "")
+    applicant_match = _APPLICANT_FACT.match(cleaned)
+    if applicant_match:
+        body = applicant_match.group("body") or ""
+        stripped = body.replace("…", "...").split("...")[0].strip()
+        two = complete_sentences(stripped, max_sentences=2) if stripped else ""
+        if two and len(two) <= 280:
+            return two
+        return _one_client_line(body)
+    return _one_client_line(cleaned)
+
+
+def consolidate_existing_documents(items: list[str], limit: int = 6) -> list[str]:
+    labeled = [client_existing_document_line(item) for item in items]
+    return consolidate_evidence([item for item in labeled if item], limit=limit)
+
+
 STATUS_CLIENT_LABELS = {
     "strong": "Strong evidence currently indicated",
     "potential": "Potentially supportable — more evidence needed",

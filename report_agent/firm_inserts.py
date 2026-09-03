@@ -34,6 +34,13 @@ def normalize_category(visa_category: str) -> str:
     return _CATEGORY_ALIASES.get(key, str(visa_category or "").strip())
 
 
+def _with_full_stop(text: str) -> str:
+    value = (text or "").strip()
+    if value and value[-1] not in ".!?":
+        return value + "."
+    return value
+
+
 @lru_cache(maxsize=1)
 def _load_all() -> dict[str, Any]:
     if not INSERTS_PATH.is_file():
@@ -71,7 +78,7 @@ def load_category_inserts(visa_category: str) -> dict[str, Any]:
         "timeline_items": [
             str(item).strip() for item in (block.get("timeline_items") or []) if str(item).strip()
         ],
-        "case_study_attribution": str(block.get("case_study_attribution") or "").strip(),
+        "case_study_attribution": _with_full_stop(str(block.get("case_study_attribution") or "").strip()),
         "cost_heading": str(block.get("cost_heading") or "").strip(),
         "cost_items": [
             str(item).strip() for item in (block.get("cost_items") or []) if str(item).strip()

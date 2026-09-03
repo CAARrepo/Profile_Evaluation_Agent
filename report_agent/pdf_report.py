@@ -13,11 +13,10 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
+    Flowable,
     HRFlowable,
     Image as PdfImage,
     KeepTogether,
-    ListFlowable,
-    ListItem,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -27,7 +26,7 @@ from reportlab.platypus import (
 
 from .config import BRAND_CHARCOAL, BRAND_LAVENDER, BRAND_NAVY, BRAND_PAPER
 from .schema import ClientReportContent
-from .text_utils import fix_mojibake
+from .text_utils import complete_sentences, fix_mojibake
 
 _NAVY = HexColor(f"#{BRAND_NAVY}")
 _SLATE = HexColor(f"#{BRAND_CHARCOAL}")
@@ -67,6 +66,108 @@ def _register_fonts() -> tuple[str, str]:
     return "Helvetica", "Helvetica-Bold"
 
 
+def _finished_item(text: str) -> str:
+    """Keep complete sentences or short labels — never leave a cut ending in '...'."""
+    cleaned = " ".join(fix_mojibake(text or "").split())
+    if not cleaned:
+        return ""
+    if "..." in cleaned:
+        cleaned = cleaned.split("...")[0].strip()
+    finished = complete_sentences(cleaned, max_sentences=3) or cleaned
+    finished = finished.rstrip("…").strip()
+    if finished.endswith("..."):
+        finished = finished[:-3].strip()
+    if not finished:
+        return ""
+    if finished[-1] in ".!?":
+        return finished
+    # Short document labels (e.g. "Award certificate") are complete as phrases.
+    if len(finished) <= 140:
+        return finished
+    return ""
+
+
+def _cell_stack(items: list[str], style: ParagraphStyle, width: float):
+    """Wrap each document item fully so table cells grow instead of truncating."""
+    finished = [_finished_item(item) for item in items]
+    finished = [item for item in finished if item]
+    if not finished:
+        return _p("—", style)
+    inner_width = max(width - 8, 40)
+    rows = [[_p(item, style)] for item in finished]
+    inner = Table(rows, colWidths=[inner_width])
+    inner.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    return inner
+
+
+def _bullet_block(items: list[str], styles: dict[str, ParagraphStyle], width: float) -> Table:
+    mark_w = 0.18 * inch
+    text_w = max(width - mark_w, 1 * inch)
+    rows = [
+        [_p("•", styles["bullet_mark"]), _p(item, styles["bullet_text"])]
+        for item in items
+    ]
+    table = Table(rows, colWidths=[mark_w, text_w])
+    table.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 4),
+                ("LEFTPADDING", (1, 0), (1, -1), 0),
+                ("RIGHTPADDING", (1, 0), (1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 1),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
+
+
+class ConsultationButton(Flowable):
+    """Clickable CTA; the whole rounded rectangle is a link."""
+
+    def __init__(
+        self,
+        label: str,
+        url: str,
+        font: str,
+        width: float = 3.35 * inch,
+        height: float = 0.46 * inch,
+    ) -> None:
+        super().__init__()
+        self.label = label
+        self.url = url
+        self.font = font
+        self.width = width
+        self.height = height
+
+    def wrap(self, availWidth: float, availHeight: float) -> tuple[float, float]:
+        self.width = min(self.width, availWidth)
+        return self.width, self.height
+
+    def draw(self) -> None:
+        canvas = self.canv
+        canvas.saveState()
+        canvas.setFillColor(_NAVY)
+        canvas.roundRect(0, 0, self.width, self.height, 6, fill=1, stroke=0)
+        canvas.setFillColor(white)
+        canvas.setFont(self.font, 11)
+        canvas.drawCentredString(self.width / 2.0, self.height / 2.0 - 3.5, self.label)
+        canvas.linkURL(self.url, (0, 0, self.width, self.height), relative=1, thickness=0)
+        canvas.restoreState()
+
+
 def _p(text: str, style: ParagraphStyle) -> Paragraph:
     # Escape HTML so raw tags never appear; use ParagraphStyle for emphasis.
     safe = (
@@ -76,16 +177,6 @@ def _p(text: str, style: ParagraphStyle) -> Paragraph:
         .replace(">", "&gt;")
     )
     return Paragraph(safe, style)
-
-
-def _link_p(url: str, style: ParagraphStyle) -> Paragraph:
-    safe = (
-        fix_mojibake(url)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
-    return Paragraph(f'<link href="{safe}">{safe}</link>', style)
 
 
 def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
@@ -131,14 +222,27 @@ def _styles(font: str, font_bold: str) -> dict[str, ParagraphStyle]:
             alignment=TA_JUSTIFY,
             spaceAfter=6,
         ),
-        "bullet": ParagraphStyle(
-            "ReportBullet",
+        "bullet_mark": ParagraphStyle(
+            "ReportBulletMark",
+            parent=base["Normal"],
+            fontName=font,
+            fontSize=9.5,
+            leading=12.5,
+            textColor=_NAVY,
+            alignment=TA_LEFT,
+            leftIndent=0,
+            firstLineIndent=0,
+        ),
+        "bullet_text": ParagraphStyle(
+            "ReportBulletText",
             parent=base["Normal"],
             fontName=font,
             fontSize=9.5,
             leading=12.5,
             textColor=black,
-            leftIndent=4,
+            alignment=TA_LEFT,
+            leftIndent=0,
+            firstLineIndent=0,
         ),
         "table_header": ParagraphStyle(
             "ReportTH",
@@ -253,11 +357,16 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
 
     story: list = []
     section = 0
+    content_width = LETTER[0] - doc.leftMargin - doc.rightMargin
 
     def _heading(title: str) -> None:
         nonlocal section
         section += 1
         story.append(_p(f"{section}. {title}", styles["h1"]))
+
+    def _bullets(items: list[str]) -> None:
+        if items:
+            story.append(_bullet_block(items, styles, content_width))
 
     story.append(_p(content.document_title, styles["title"]))
     story.append(HRFlowable(width="100%", thickness=1, color=_NAVY, spaceAfter=8))
@@ -329,18 +438,17 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
             _p("Explanation", styles["table_header"]),
             _p("Priority evidence", styles["table_header"]),
         ]
-        table_data = [header]
+        body_rows = []
+        col_widths = [1.45 * inch, 1.55 * inch, 2.35 * inch, 1.55 * inch]
         for row in content.criterion_rows:
-            evidence = ", ".join(row.top_evidence[:5]) if row.top_evidence else "—"
-            table_data.append(
+            body_rows.append(
                 [
                     _p(row.criterion_name, styles["table_cell"]),
                     _p(row.client_status_label, styles["table_cell"]),
                     _p(row.explanation or "—", styles["table_cell"]),
-                    _p(evidence, styles["table_cell"]),
+                    _cell_stack(row.top_evidence[:5], styles["table_cell"], col_widths[3]),
                 ]
             )
-        col_widths = [1.45 * inch, 1.55 * inch, 2.35 * inch, 1.55 * inch]
     else:
         header = [
             _p("Criterion", styles["table_header"]),
@@ -348,38 +456,53 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
             _p("Existing documents", styles["table_header"]),
             _p("Outstanding documents", styles["table_header"]),
         ]
-        table_data = [header]
+        body_rows = []
+        col_widths = [1.45 * inch, 2.35 * inch, 1.55 * inch, 1.55 * inch]
         for row in content.criterion_rows:
             number = row.criterion_number or 0
             label = f"{number}. {row.criterion_name}" if number else row.criterion_name
-            existing = "; ".join(row.existing_documents[:6]) if row.existing_documents else "—"
-            outstanding = "; ".join(row.outstanding_documents[:6]) if row.outstanding_documents else "—"
-            table_data.append(
+            body_rows.append(
                 [
                     _p(label, styles["table_cell"]),
                     _p(row.explanation or "—", styles["table_cell"]),
-                    _p(existing, styles["table_cell"]),
-                    _p(outstanding, styles["table_cell"]),
+                    _cell_stack(row.existing_documents[:6], styles["table_cell"], col_widths[2]),
+                    _cell_stack(row.outstanding_documents[:6], styles["table_cell"], col_widths[3]),
                 ]
             )
-        col_widths = [1.45 * inch, 2.35 * inch, 1.55 * inch, 1.55 * inch]
 
-    crit_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-    style_cmds = [
-        ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
-        ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
-        ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ]
-    for i in range(1, len(table_data)):
-        if i % 2 == 0:
-            style_cmds.append(("BACKGROUND", (0, i), (-1, i), _ROW_ALT))
-    crit_table.setStyle(TableStyle(style_cmds))
-    story.append(crit_table)
+    # One table per criterion so explanation cells can grow vertically and a
+    # tall row can start on a new page instead of being clipped with "...".
+    header_table = Table([header], colWidths=col_widths, repeatRows=0)
+    header_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
+                ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
+                ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
+    story.append(header_table)
+    for index, cells in enumerate(body_rows, start=1):
+        row_table = Table([cells], colWidths=col_widths, repeatRows=0)
+        cmds = [
+            ("BOX", (0, 0), (-1, -1), 0.4, _RULE),
+            ("INNERGRID", (0, 0), (-1, -1), 0.3, _RULE),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]
+        if index % 2 == 0:
+            cmds.append(("BACKGROUND", (0, 0), (-1, -1), _ROW_ALT))
+        row_table.setStyle(TableStyle(cmds))
+        story.append(row_table)
 
     if content.step2_heading or content.step2_paragraphs:
         story.append(_p(content.step2_heading or "STEP 2 — Final Merits Determination", styles["h1"]))
@@ -394,56 +517,20 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
 
     _heading("Priority Opportunities")
     if content.priority_opportunities:
-        story.append(
-            ListFlowable(
-                [
-                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                    for item in content.priority_opportunities
-                ],
-                bulletType="bullet",
-                start="•",
-            )
-        )
+        _bullets(content.priority_opportunities)
     else:
         story.append(_p("No priority opportunities were identified from the current record.", styles["body"]))
 
     _heading("Priority Evidence Checklist")
     if content.information_still_needed:
         story.append(_p(content.checklist_gaps_heading or "Information still needed", styles["section_label"]))
-        story.append(
-            ListFlowable(
-                [
-                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                    for item in content.information_still_needed
-                ],
-                bulletType="bullet",
-                start="•",
-            )
-        )
+        _bullets(content.information_still_needed)
     if content.priority_evidence_checklist:
         story.append(_p(content.checklist_docs_heading or "Recommended supporting materials", styles["section_label"]))
-        story.append(
-            ListFlowable(
-                [
-                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                    for item in content.priority_evidence_checklist
-                ],
-                bulletType="bullet",
-                start="•",
-            )
-        )
+        _bullets(content.priority_evidence_checklist)
     if content.potential_evidence_to_develop:
         story.append(_p("Evidence the applicant does not currently possess", styles["section_label"]))
-        story.append(
-            ListFlowable(
-                [
-                    ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                    for item in content.potential_evidence_to_develop
-                ],
-                bulletType="bullet",
-                start="•",
-            )
-        )
+        _bullets(content.potential_evidence_to_develop)
     if content.aao_trace_note:
         story.append(_p(content.aao_trace_note, styles["body"]))
     if (
@@ -492,29 +579,11 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
         if content.firm_timeline_heading:
             story.append(_p(content.firm_timeline_heading, styles["section_label"]))
         if content.firm_timeline_items:
-            story.append(
-                ListFlowable(
-                    [
-                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                        for item in content.firm_timeline_items
-                    ],
-                    bulletType="bullet",
-                    start="•",
-                )
-            )
+            _bullets(content.firm_timeline_items)
         if content.firm_cost_items:
             if content.firm_cost_heading:
                 story.append(_p(content.firm_cost_heading, styles["section_label"]))
-            story.append(
-                ListFlowable(
-                    [
-                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                        for item in content.firm_cost_items
-                    ],
-                    bulletType="bullet",
-                    start="•",
-                )
-            )
+            _bullets(content.firm_cost_items)
 
     if content.consultation_heading or content.consultation_url:
         _heading(content.consultation_heading or "Book a free consultation")
@@ -523,18 +592,16 @@ def write_client_pdf(content: ClientReportContent, output_path: Path) -> Path:
         if content.consultation_intro:
             story.append(_p(content.consultation_intro, styles["body"]))
         if content.consultation_items:
-            story.append(
-                ListFlowable(
-                    [
-                        ListItem(_p(item, styles["bullet"]), leftIndent=8, bulletColor=_NAVY)
-                        for item in content.consultation_items
-                    ],
-                    bulletType="bullet",
-                    start="•",
-                )
-            )
+            _bullets(content.consultation_items)
         if content.consultation_url:
-            story.append(_link_p(content.consultation_url, styles["body"]))
+            story.append(Spacer(1, 10))
+            button = ConsultationButton(
+                "Book a Free Consultation",
+                content.consultation_url,
+                font_bold,
+            )
+            button.hAlign = "CENTER"
+            story.append(button)
 
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
     return output_path

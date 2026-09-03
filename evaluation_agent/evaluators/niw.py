@@ -24,7 +24,7 @@ from ..schema import (
     ProfileClassification,
 )
 from ..scoring import collect_mapped_facts, merge_gap_lists, overall_rating_from_niw, summarize_statuses
-from .base import BaseEvaluator
+from .base import PROFILE_CONTEXT_LIMIT, BaseEvaluator
 
 
 def _prong_required_elements(pdef: dict[str, Any]) -> list[str]:
@@ -131,7 +131,7 @@ class NIWEvaluator(BaseEvaluator):
             part1=part1,
             applicant_facts=facts,
             information_gaps=gaps,
-            profile_context=self.profile_context_facts(intake)[:8],
+            profile_context=self.profile_context_facts(intake)[:PROFILE_CONTEXT_LIMIT],
         )
         supporting = judgment["supporting_facts"] or facts[:8]
         allowed = set(facts)
@@ -167,7 +167,7 @@ class NIWEvaluator(BaseEvaluator):
                 prong=pdef,
                 applicant_facts=facts,
                 information_gaps=prong_gaps,
-                profile_context=self.profile_context_facts(intake)[:8],
+                profile_context=self.profile_context_facts(intake)[:PROFILE_CONTEXT_LIMIT],
                 legal_requirement=legal or None,
                 observed_aao_pattern=intel or None,
                 similar_sustained_cases=public_sustained or None,

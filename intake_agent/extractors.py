@@ -2,7 +2,23 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
+
+
+def extract_pdf_bytes(data: bytes) -> str:
+    """Extract text from raw PDF bytes (downloaded URL or in-memory file)."""
+    from pypdf import PdfReader
+
+    if not data or not data.lstrip().startswith(b"%PDF"):
+        return ""
+    reader = PdfReader(BytesIO(data))
+    parts: list[str] = []
+    for page in reader.pages:
+        text = page.extract_text() or ""
+        if text.strip():
+            parts.append(text)
+    return "\n".join(parts).strip()
 
 
 def extract_text(path: Path) -> str:
@@ -23,15 +39,7 @@ def extract_text(path: Path) -> str:
 
 
 def _extract_pdf(path: Path) -> str:
-    from pypdf import PdfReader
-
-    reader = PdfReader(str(path))
-    parts: list[str] = []
-    for page in reader.pages:
-        text = page.extract_text() or ""
-        if text.strip():
-            parts.append(text)
-    return "\n".join(parts).strip()
+    return extract_pdf_bytes(path.read_bytes())
 
 
 def _extract_docx(path: Path) -> str:

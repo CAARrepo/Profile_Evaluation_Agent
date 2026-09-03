@@ -12,7 +12,14 @@ from typing import Any, Iterator
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from .config import OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_NUM_CTX, OLLAMA_TIMEOUT
+from .config import (
+    OLLAMA_HOST,
+    OLLAMA_MODEL,
+    OLLAMA_NUM_CTX,
+    OLLAMA_NUM_GPU,
+    OLLAMA_NUM_THREAD,
+    OLLAMA_TIMEOUT,
+)
 
 _SSL_ENV_KEYS = ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
 
@@ -74,6 +81,8 @@ def chat_json(
         "options": {
             "temperature": temperature,
             "num_ctx": OLLAMA_NUM_CTX,
+            "num_thread": OLLAMA_NUM_THREAD,
+            "num_gpu": OLLAMA_NUM_GPU,
         },
         "messages": [
             {"role": "system", "content": system},

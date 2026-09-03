@@ -69,7 +69,15 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     agent = IntakeAgent(model=args.model, use_llm=not args.no_llm)
     if args.no_llm:
-        console.print("[yellow]Running deterministic seed only (no LLM).[/yellow]")
+        console.print(
+            "[yellow]Debug only: skipping LLM PDF extraction. "
+            "Production intake always uses the LLM.[/yellow]"
+        )
+    else:
+        console.print(
+            "[cyan]Intake LLM will extract every uploaded PDF and fetched URL "
+            "(GPU + CPU), then merge the profile.[/cyan]"
+        )
 
     out = agent.run_and_save(lead_id, Path(args.output_dir))
     profile = json.loads(out.read_text(encoding="utf-8"))
@@ -102,7 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--lead-id", default=None, help="Lead UUID from User_Info.csv")
     run_p.add_argument("--model", default=OLLAMA_MODEL, help="Ollama model name")
     run_p.add_argument("--output-dir", default=str(OUTPUT_DIR))
-    run_p.add_argument("--no-llm", action="store_true", help="Skip LLM; emit seeded profile only")
+    run_p.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Debug/tests only: skip LLM PDF extraction and emit the seeded profile",
+    )
     run_p.add_argument("--allow-no-docs", action="store_true", help="Allow auto-pick without local docs")
     run_p.set_defaults(func=cmd_run)
     return p

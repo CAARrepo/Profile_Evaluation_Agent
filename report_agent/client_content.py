@@ -18,6 +18,7 @@ from .text_utils import (
     client_criterion_explanation,
     client_status_label,
     consolidate_evidence,
+    consolidate_existing_documents,
     explain_overall_rating,
     fix_mojibake,
 )
@@ -55,7 +56,7 @@ def build_client_content(
             [str(x) for x in (c.get("recommended_evidence") or [])],
             limit=5,
         )
-        existing_docs = consolidate_evidence(
+        existing_docs = consolidate_existing_documents(
             [str(x) for x in (c.get("applicant_facts") or [])],
             limit=6,
         )

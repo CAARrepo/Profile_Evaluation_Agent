@@ -23,6 +23,8 @@ OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "16384"))
 # Non-streaming requests, so this covers the whole generation. Kept in step with
 # intake_agent.config.OLLAMA_TIMEOUT.
 OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "1800"))
+OLLAMA_NUM_THREAD = int(os.environ.get("OLLAMA_NUM_THREAD", str(os.cpu_count() or 4)))
+OLLAMA_NUM_GPU = int(os.environ.get("OLLAMA_NUM_GPU", "-1"))
 
 KB_FILENAMES = {
     "O-1A": "O1A_evaluation_knowledge_base.json",

@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from .category import detect_intake_category
+from .config import QUESTIONNAIRE_STRING_LIMIT
 from .schema import CaseBundle
 
 # Compact shape for the LLM. The full Pydantic JSON Schema is ~3k tokens and
@@ -78,9 +79,17 @@ _CATEGORY_MAPPING = {
     "O-1A": (
         "This lead is O-1A. Organize facts into the shared evidence keys "
         "(awards, memberships, media, peer_review, judging, patents, publications, "
-        "critical_role, high_salary, conferences, google_scholar). Downstream evaluation "
-        "maps those keys to the eight O-1A regulatory criteria. Put every listed "
-        "criteria_key in criteria[], even if the answer is no/unknown."
+        "critical_role, high_salary, conferences, google_scholar). The current O-1 "
+        "questionnaire is detailed: sectionB uses arrays (awards, internalAwards, "
+        "employerAwards, memberships, patents, innovations, peerReviews, "
+        "scholarlyArticles, usEmployment, employerContributions) plus yes/no flags "
+        "(receivedAwards, hasMemberships, filedPatents, createdInnovations, "
+        "publishedScholarly, criticalOrEssentialRole, hasPeerReviewed). Map those "
+        "structured answers into the shared keys. Treat innovations + patents as "
+        "original-contribution facts (patents key). Treat peerReviews as both "
+        "peer_review and judging. Downstream evaluation maps those keys to the eight "
+        "O-1A regulatory criteria. Put every listed criteria_key in criteria[], even "
+        "if the answer is no/unknown."
     ),
     "EB-1A": (
         "This lead is EB-1A (not O-1A). Organize facts into the shared evidence keys "
@@ -133,19 +142,23 @@ Your job is ONLY intake organization — not legal advice and not a final eligib
 MVP pipeline: User Submission → Intake Agent → Evaluation Agent → Final Report → Attorney Review
 
 You must:
-1. Build a standardized applicant profile from questionnaire answers + any available resume/document text + any successfully fetched applicant-provided URL pages.
+1. Build a standardized applicant profile from questionnaire answers + extracted text from uploaded PDFs/resumes + any successfully fetched applicant-provided URL pages.
 2. Treat every applicant "Yes" (and detailed text) as an applicant-stated CLAIM. For MVP initial evaluation, assume those claims are true — do NOT demand supporting evidence.
 3. {mapping}
 4. Record missing or thin details in information_gaps[] as factual notes (not questions to the user).
 5. Pass claims[] and information_gaps[] forward for the Evaluation Agent.
 6. ALWAYS set readiness to "ready_for_evaluation". Missing info must NEVER block evaluation.
+7. When documents[] contains extracted PDF text, you MUST extract education, employment, awards, publications, peer-review/judging, and compensation (W-2 / 1099 / tax) from that text. Put short quotes on the matching criteria as evidence_items with source=document and reference=filename. Also copy those excerpts into evidence_index[].
+8. The named lead is the only applicant. Do not replace identity, employment, or education with nominators, recommenders, selection-committee bios, or letter authors.
 
 MVP rules (strict):
 - Do NOT ask the user any follow-up questions.
 - Leave missing_information[] empty (reserved for a future evidence stage).
 - Do NOT require or request supporting documents/evidence.
 - Keep evidence_items / evidence_index when documents or fetched URLs exist (infrastructure for later); do not treat missing docs as blockers.
+- If documents[] is present, extract from the PDF text — do not leave document excerpts empty.
 - If a criterion is Yes with details → evidence_status=claim_only, put details in claim_summary / claims[].
+- If a criterion also has a supporting PDF excerpt → evidence_status=partially_supported.
 - If details or documents are missing → add an information_gaps entry and continue.
 - Use fetched_url_pages text when present. If a URL failed/blocked, ignore it and continue — do not invent page content.
 - Do not invent employers, awards, publications, salaries, or URLs.
@@ -157,6 +170,19 @@ MVP rules (strict):
 
 # Generic fallback for tools that still import a string constant.
 SYSTEM_PROMPT = system_prompt("")
+
+
+def _clip_for_prompt(value: Any, max_str: int = QUESTIONNAIRE_STRING_LIMIT) -> Any:
+    """Keep questionnaire JSON in the LLM window when the new O-1 form is long."""
+    if isinstance(value, str):
+        if len(value) <= max_str:
+            return value
+        return value[:max_str] + "...[truncated]..."
+    if isinstance(value, dict):
+        return {k: _clip_for_prompt(v, max_str) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_clip_for_prompt(v, max_str) for v in value]
+    return value
 
 
 def _compact_lead(lead: dict[str, Any]) -> dict[str, Any]:
@@ -182,36 +208,42 @@ def build_user_prompt(bundle: CaseBundle, visa_category: str | None = None) -> s
 
     docs_payload = []
     for d in bundle.document_texts:
+        facts = d.get("extracted_facts") or []
         docs_payload.append(
             {
                 "filename": d.get("filename"),
                 "relative_path": d.get("relative_path"),
-                "text": d.get("text", "")[:14000],
+                "extracted_facts": facts,
+                "text": "" if facts else (d.get("text") or "")[:4000],
             }
         )
 
     url_payload = []
     for page in bundle.url_texts:
+        facts = page.get("extracted_facts") or []
         url_payload.append(
             {
                 "url": page.get("url"),
                 "title": page.get("title"),
                 "source": page.get("source"),
-                "text": (page.get("text") or "")[:8000],
+                "extracted_facts": facts,
+                "text": "" if facts else (page.get("text") or "")[:4000],
             }
         )
 
     payload = {
         "task": (
             f"Produce a StandardizedProfile JSON for this {category or 'visa'} MVP case. "
+            "Use extracted_facts from every uploaded PDF and fetched URL, plus "
+            "questionnaire_answers. "
             "Assume Yes-criterion details are true claims for initial evaluation. "
-            "Use fetched_url_pages when present. "
+            "Use fetched_url_pages when present, but never treat nominator bios as the applicant. "
             "Record gaps in information_gaps only. Set readiness=ready_for_evaluation. "
             "Leave missing_information empty."
         ),
         "visa_category": category or "unknown — infer from immigration_category; do not assume O-1A",
         "lead": _compact_lead(bundle.lead),
-        "questionnaire_answers": answers,
+        "questionnaire_answers": _clip_for_prompt(answers) if answers is not None else None,
         "documents": docs_payload,
         "fetched_url_pages": url_payload,
         "url_fetch_failures": list(bundle.url_fetch_failures or []),
@@ -221,6 +253,7 @@ def build_user_prompt(bundle: CaseBundle, visa_category: str | None = None) -> s
             "no_follow_up_questions": True,
             "assume_yes_claims_true": True,
             "evidence_not_required": True,
+            "extract_from_uploaded_pdfs": True,
             "gaps_never_block": True,
             "url_fetch_best_effort": True,
             "readiness_must_be": "ready_for_evaluation",

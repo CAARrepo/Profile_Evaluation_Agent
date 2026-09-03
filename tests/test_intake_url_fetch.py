@@ -8,6 +8,7 @@ from intake_agent.url_fetch import (
     collect_applicant_urls,
     extract_urls_from_value,
     fetch_applicant_urls,
+    fetch_one_url,
     html_to_text,
     is_fetchable_url,
 )
@@ -137,3 +138,54 @@ def test_collect_applicant_urls_caps_and_dedupes(monkeypatch):
         identity_urls=["https://site-a.test/1"],
     )
     assert len(urls) == 2
+
+
+def test_fetch_one_url_extracts_pdf_bytes(monkeypatch):
+    class _Resp:
+        status_code = 200
+        headers = {"content-type": "application/pdf"}
+        content = b"%PDF-1.4 fake"
+        url = "https://university.test/award.pdf"
+        text = ""
+
+    class _Client:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def get(self, url):  # noqa: ARG002
+            return _Resp()
+
+    monkeypatch.setattr("intake_agent.url_fetch._http_client", lambda **kwargs: _Client())
+    monkeypatch.setattr(
+        "intake_agent.url_fetch.extract_pdf_bytes",
+        lambda data: "Award granted to Ada Lovelace for academic excellence in 2023.",
+    )
+    page = fetch_one_url("https://university.test/award.pdf")
+    assert page is not None
+    assert "Ada Lovelace" in page["text"]
+    assert page["source"] == "url"
+
+
+def test_fetch_one_url_skips_login_wall(monkeypatch):
+    class _Resp:
+        status_code = 200
+        headers = {"content-type": "text/html"}
+        content = b"<html>Sign in to view this profile. Forgot password? Join now.</html>"
+        url = "https://www.linkedin.com/in/someone"
+        text = "Sign in to view this profile. Forgot password? Join now."
+
+    class _Client:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def get(self, url):  # noqa: ARG002
+            return _Resp()
+
+    monkeypatch.setattr("intake_agent.url_fetch._http_client", lambda **kwargs: _Client())
+    assert fetch_one_url("https://www.linkedin.com/in/someone") is None

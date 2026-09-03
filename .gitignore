@@ -1,4 +1,5 @@
 datasets/
+old_datasets/
 *_outputs/
 report_outputs_old/
 knowledge_base/

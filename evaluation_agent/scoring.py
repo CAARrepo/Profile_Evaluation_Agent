@@ -30,7 +30,7 @@ def fact_lines_from_intake_item(item: dict[str, Any] | None, label: str) -> list
     for ev in item.get("evidence_items") or []:
         excerpt = (ev.get("excerpt") or "").strip()
         if excerpt and excerpt not in summary:
-            facts.append(f"Source {ev.get('source', 'unknown')}: {excerpt[:400]}")
+            facts.append(f"Source {ev.get('source', 'unknown')} ({ev.get('reference', '')}): {excerpt[:500]}")
     return facts
 
 

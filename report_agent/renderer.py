@@ -305,7 +305,7 @@ def render_markdown(
             lines.append("")
         lines.extend([f"- {item}" for item in client.consultation_items])
         if client.consultation_url:
-            lines.append(f"- {client.consultation_url}")
+            lines.append(f"- [Book a Free Consultation]({client.consultation_url})")
         lines.append("")
 
     if client.recommended_next_steps:

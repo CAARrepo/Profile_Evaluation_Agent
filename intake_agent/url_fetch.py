@@ -21,6 +21,7 @@ from .config import (
     URL_FETCH_MAX_URLS,
     URL_FETCH_TIMEOUT,
 )
+from .extractors import extract_pdf_bytes
 
 _SSL_ENV_KEYS = ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
 
@@ -40,9 +41,18 @@ _BROWSER_HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
 }
+
+_LOGIN_MARKERS = (
+    "sign in to view",
+    "forgot password",
+    "join now",
+    "sign in with email",
+    "create an account",
+    "please log in",
+)
 
 
 @contextmanager
@@ -150,6 +160,16 @@ def classify_url_source(url: str) -> str:
     return "url"
 
 
+# Third-party bios in the detailed O-1 form (nominators, recommenders) are not
+# the applicant. Fetching those pages poisons intake with the wrong person.
+_SKIP_URL_KEYS = {
+    "selectioncommittee",
+    "tiersandrequirements",
+    "recommenders",
+    "companiesexplanation",
+}
+
+
 def extract_urls_from_value(value: Any, *, found: list[str] | None = None) -> list[str]:
     """Recursively collect http(s) URLs from nested questionnaire / identity data."""
     out = found if found is not None else []
@@ -162,7 +182,9 @@ def extract_urls_from_value(value: Any, *, found: list[str] | None = None) -> li
                 out.append(cleaned)
         return out
     if isinstance(value, dict):
-        for v in value.values():
+        for key, v in value.items():
+            if str(key).replace("_", "").lower() in _SKIP_URL_KEYS:
+                continue
             extract_urls_from_value(v, found=out)
         return out
     if isinstance(value, (list, tuple, set)):
@@ -190,6 +212,21 @@ def collect_applicant_urls(
     return [u for u in urls if is_fetchable_url(u)][:URL_FETCH_MAX_URLS]
 
 
+def _looks_like_pdf(content_type: str, url: str, data: bytes) -> bool:
+    if "pdf" in (content_type or ""):
+        return True
+    path = (urlparse(url).path or "").lower()
+    if path.endswith(".pdf"):
+        return True
+    return bool(data) and data.lstrip().startswith(b"%PDF")
+
+
+def _is_login_wall(text: str) -> bool:
+    lowered = (text or "").lower()
+    hits = sum(1 for marker in _LOGIN_MARKERS if marker in lowered)
+    return hits >= 2
+
+
 def fetch_one_url(
     url: str,
     *,
@@ -207,17 +244,25 @@ def fetch_one_url(
             if resp.status_code >= 400:
                 return None
             content_type = (resp.headers.get("content-type") or "").lower()
-            raw = resp.text or ""
-            if not raw.strip():
-                return None
+            data = resp.content or b""
             title = ""
-            if "html" in content_type or raw.lstrip().lower().startswith("<!doctype") or "<html" in raw[:500].lower():
-                title, text = html_to_text(raw)
+            if _looks_like_pdf(content_type, str(resp.url), data):
+                text = extract_pdf_bytes(data)
+                title = Path(urlparse(str(resp.url)).path).name
             else:
-                text = raw
+                raw = resp.text or ""
+                if not raw.strip():
+                    return None
+                if (
+                    "html" in content_type
+                    or raw.lstrip().lower().startswith("<!doctype")
+                    or "<html" in raw[:500].lower()
+                ):
+                    title, text = html_to_text(raw)
+                else:
+                    text = raw
             text = re.sub(r"\s+", " ", text).strip()
-            if len(text) < 40:
-                # Likely a login wall / blocked shell page
+            if len(text) < 40 or _is_login_wall(text):
                 return None
             if max_chars and len(text) > max_chars:
                 text = text[:max_chars] + " ...[truncated]..."

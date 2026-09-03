@@ -9,6 +9,7 @@ from pypdf import PdfReader
 
 from evaluation_agent import EvaluationAgent
 from report_agent import ReportAgent
+from report_agent.config import O1A_CHALLENGING_CRITERIA, O1A_CHALLENGING_NOTE
 from report_agent.pdf_report import write_client_pdf
 from report_agent.text_utils import complete_sentences, fix_mojibake
 from tests.fakes import FakeJudge
@@ -93,6 +94,7 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
 
     reader = PdfReader(str(pdf_path))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    compact = " ".join(text.split())
     assert "Initial O-1A Profile Evaluation" in text
     assert "â€”" not in text
     assert "â€™" not in text
@@ -102,7 +104,7 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     assert "<b>" not in text
     assert "</b>" not in text
     # Profile sections plus the static firm case study
-    assert 1 <= len(reader.pages) <= 22
+    assert 1 <= len(reader.pages) <= 28
     assert "O-1A approval rate: 100%" in text
     assert "Prior results do not guarantee a similar outcome" in text
     assert "Attorney advertising" in text
@@ -111,7 +113,8 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     assert "Processing Times and Costs" in text
     assert "Asel Williams" in text
     assert "$6,000" in text
-    assert "calendly.com/aselwilliams/consultation" in text
+    assert "calendly.com/aselwilliams/consultation" not in text
+    assert "Book a Free Consultation" in compact
     assert "Assessment Snapshot" not in text
     assert "Preliminary status" not in text
     assert "This report is based on preliminary information" in text
@@ -123,7 +126,13 @@ def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     assert Path(client.firm_case_study_image).is_file()
     assert client.firm_case_study_image.endswith("Image 1. Patrick approval.png")
     assert "Patrick O-1A Approval" in text
+    assert "Immigration Attorney at Williams Law." in compact
     assert any(_pdf_page_has_image(page) for page in reader.pages)
+    assert "This is one of the most challenging O-1A criteria" in compact
+    assert "totality of the evidence" in compact
+    assert "Book a Free Consultation" in compact
+    assert "calendly.com/aselwilliams/consultation" in markdown
+    assert "[Book a Free Consultation]" in markdown
 
     md = tmp_path / "r.md"
     js = tmp_path / "r.json"
@@ -186,6 +195,90 @@ def test_evidence_consolidated_and_no_mid_sentence_cut():
         # duplicates collapsed
         lowered = [e.lower().rstrip(".") for e in row.top_evidence]
         assert len(lowered) == len(set(lowered))
+
+
+def test_pdf_table_and_bullets_keep_complete_sentences(tmp_path: Path):
+    eval_dict, intake = _eval_o1a()
+    long_fact = (
+        "Applicant states (awards): Non-Resident Tuition Fee Waiver from California State University, Los Angeles. "
+        "The internal award for outstanding computer vision innovation and technical leadership at KATSH Digital ID "
+        "recognized original work on the Hand ID platform."
+    )
+    for criterion in eval_dict["criteria"]:
+        if criterion.get("criterion_id") == "o1a_awards":
+            criterion["status"] = "potential"
+            criterion["applicant_facts"] = [
+                long_fact,
+                "The work helped the system achieve 95 percent precision during initial test...",
+            ]
+            criterion["information_gaps"] = ["Award certificate."]
+            break
+
+    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    pdf_path = tmp_path / "complete_cells.pdf"
+    write_client_pdf(client, pdf_path)
+    compact = " ".join(
+        " ".join((page.extract_text() or "").split())
+        for page in PdfReader(str(pdf_path)).pages
+    )
+    assert "Hand ID platform." in compact
+    assert "Award certificate." in compact
+    assert "..." not in compact
+    assert "Book a Free Consultation" in compact
+
+
+def test_pdf_builds_when_applicant_facts_include_long_pdf_excerpts(tmp_path: Path):
+    eval_dict, intake = _eval_o1a()
+    for criterion in eval_dict["criteria"]:
+        if criterion.get("criterion_id") == "o1a_awards":
+            criterion["applicant_facts"] = [
+                "Applicant states (awards): National/external: Non-Resident Tuition Fee Waiver. Internal award details continue for many sentences about computer vision.",
+                "Source document (dcd75578-402a-4ad9-b659-b989e66438f4-KATSH_ID_Outstanding_Computer_Vision_Innovation_Award.pdf): CERTIFICATE OF RECOGNITION AWARD FOR OUTSTANDING COMPUTER VISION INNOVATION AND TECHNICAL LEADERSHIP PRESENTED TO MUJAHIR ABBASI. " * 20,
+                "Source document (24e27ca7-a031-4237-aa02-c00c7c37e001-TY2025_Tax_Transcript.pdf): Sensitive taxpayer data SSN XXX-XX-5688 " * 20,
+            ]
+            break
+    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    awards = next(row for row in client.criterion_rows if "Prizes or Awards" in row.criterion_name)
+    assert any("KATSH ID Outstanding Computer Vision Innovation Award" in item for item in awards.existing_documents)
+    assert all("SSN" not in item for item in awards.existing_documents)
+    pdf_path = tmp_path / "long_excerpts.pdf"
+    write_client_pdf(client, pdf_path)
+    assert pdf_path.exists() and pdf_path.stat().st_size > 1000
+
+
+def test_challenging_note_is_never_truncated_in_pdf(tmp_path: Path):
+    eval_dict, intake = _eval_o1a()
+    long_reasoning = (
+        "The applicant has described several awards, an internal technical-leadership honor, "
+        "and employer-related recognition that may relate to this criterion and that require "
+        "careful comparison against the regulatory standard for nationally or internationally recognized prizes. "
+        "Additional independent documentation would be needed to evaluate whether those honors "
+        "are nationally or internationally recognized rather than institutional or internal only."
+    )
+    for criterion in eval_dict["criteria"]:
+        if criterion.get("criterion_id") in O1A_CHALLENGING_CRITERIA:
+            criterion["client_summary"] = ""
+            criterion["reasoning_summary"] = long_reasoning
+
+    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    challenging_rows = [
+        row for row in client.criterion_rows if O1A_CHALLENGING_NOTE in row.explanation
+    ]
+    assert len(challenging_rows) == 3
+    for row in challenging_rows:
+        assert row.explanation.endswith("totality of the evidence.")
+        assert "..." not in row.explanation
+
+    pdf_path = tmp_path / "challenging_note.pdf"
+    write_client_pdf(client, pdf_path)
+    text = " ".join(
+        (page.extract_text() or "") for page in PdfReader(str(pdf_path)).pages
+    )
+    text = " ".join(text.split())
+    assert "This is one of the most challenging O-1A criteria" in text
+    assert "targeting easier criteria, such as published material or judging the work of others" in text
+    assert "totality of the evidence" in text
+    assert "Book a Free Consultation" in text
 
 
 def test_generate_and_save_writes_pdf(tmp_path: Path):

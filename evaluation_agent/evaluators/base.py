@@ -38,6 +38,9 @@ EB1A_INTAKE_MAP: dict[str, list[str]] = {
 }
 
 
+PROFILE_CONTEXT_LIMIT = 12
+
+
 class BaseEvaluator(ABC):
     visa_category: VisaCategory
 
@@ -95,20 +98,24 @@ class BaseEvaluator(ABC):
             inst = edu.get("institution") or ""
             if deg or inst:
                 facts.append(f"Education: {deg} — {inst}".strip(" —"))
-        for claim in intake.get("claims") or []:
-            if claim:
-                facts.append(f"Claim: {claim}")
+
+        # Uploaded PDF excerpts before long questionnaire claims so they survive truncation.
+        documents: list[str] = []
+        urls: list[str] = []
         for ev in intake.get("evidence_index") or []:
             if not isinstance(ev, dict):
                 continue
             source = str(ev.get("source") or "")
-            if source not in {"url", "linkedin", "google_scholar", "media"}:
-                continue
             excerpt = (ev.get("excerpt") or "").strip()
             ref = (ev.get("reference") or "").strip()
-            if excerpt:
-                facts.append(f"Fetched {source} ({ref}): {excerpt[:350]}")
-        return facts
+            if not excerpt:
+                continue
+            if source == "document":
+                documents.append(f"Uploaded PDF ({ref}): {excerpt[:350]}")
+            elif source in {"url", "linkedin", "google_scholar", "media"}:
+                urls.append(f"Fetched {source} ({ref}): {excerpt[:350]}")
+        claims = [f"Claim: {claim}" for claim in (intake.get("claims") or []) if claim]
+        return facts + documents[:6] + urls[:4] + claims
 
     def llm_evaluate_criterion(
         self,
@@ -137,7 +144,7 @@ class BaseEvaluator(ABC):
             applicant_facts=facts,
             information_gaps=gaps,
             dominant_answer=answer,
-            profile_context=self.profile_context_facts(intake)[:8],
+            profile_context=self.profile_context_facts(intake)[:PROFILE_CONTEXT_LIMIT],
             occupation_note=occupation_note or None,
             kb_principles={
                 "applicant_statement_handling": self.principles.get("applicant_statement_handling"),
