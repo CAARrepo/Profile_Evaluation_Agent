@@ -67,6 +67,9 @@ def cmd_run(args: argparse.Namespace) -> int:
             return 1
         console.print(f"[yellow]Auto-selected lead:[/yellow] {lead_id}")
 
+    from .llm import reset_token_usage, token_usage
+
+    reset_token_usage()
     agent = IntakeAgent(model=args.model, use_llm=not args.no_llm)
     if args.no_llm:
         console.print(
@@ -89,6 +92,13 @@ def cmd_run(args: argparse.Namespace) -> int:
     console.print(f"Claims: {len(profile.get('claims') or [])}")
     console.print(f"Information gaps: {len(profile.get('information_gaps') or [])}")
     console.print(f"Conflicts: {len(profile.get('conflicts') or [])}")
+    usage = token_usage()
+    if usage["call_count"]:
+        console.print(
+            f"[cyan]Tokens[/cyan] {usage['total_tokens']} total "
+            f"({usage['prompt_tokens']} prompt + {usage['completion_tokens']} completion, "
+            f"{usage['call_count']} calls)"
+        )
     return 0
 
 

@@ -8,6 +8,7 @@ from typing import Any, Optional, Union
 
 from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, OLLAMA_HOST, OLLAMA_MODEL
 from .evaluators import EB1AEvaluator, NIWEvaluator, O1AEvaluator
+from .llm import token_usage
 from .llm_judge import LLMJudge
 from .router import detect_visa_category
 from .schema import EvaluationResult, VisaCategory
@@ -79,6 +80,16 @@ class EvaluationAgent:
             intake_dir=intake_dir,
             category_override=category_override,
         )
+        usage = token_usage()
+        notes = dict(result.raw_notes or {})
+        notes["token_usage"] = {
+            "prompt_tokens": usage["prompt_tokens"],
+            "completion_tokens": usage["completion_tokens"],
+            "total_tokens": usage["total_tokens"],
+            "call_count": usage["call_count"],
+            "calls": usage["calls"],
+        }
+        result.raw_notes = notes
         output_dir.mkdir(parents=True, exist_ok=True)
         out_path = output_dir / f"{lead_id}_evaluation.json"
         out_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")

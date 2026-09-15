@@ -23,7 +23,7 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b-instruct")
 # model on every switch between the two agents.
 # Sized from tools/measure_prompt_tokens.py — the intake prompt alone measures
 # ~8.1k tokens, so 8192 would truncate it before the profile is even generated.
-OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "16384"))
+OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "32768"))
 
 # Requests are non-streaming, so this covers the whole generation, not just the
 # first byte. When the model is partly offloaded to CPU it generates at roughly
@@ -33,14 +33,14 @@ OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "1800"))
 
 # Per-file LLM window (head + tail). Every PDF is extracted; there is no
 # all-files total omit. The old 24k total cap dropped later PDFs.
-MAX_DOCUMENT_CHARS = int(os.environ.get("INTAKE_MAX_DOC_CHARS", "16000"))
+MAX_DOCUMENT_CHARS = int(os.environ.get("INTAKE_MAX_DOC_CHARS", "28000"))
 MAX_TOTAL_DOCUMENT_CHARS = int(os.environ.get("INTAKE_MAX_TOTAL_DOC_CHARS", "0"))
-SOURCE_EXTRACT_CHARS = int(os.environ.get("INTAKE_SOURCE_EXTRACT_CHARS", "12000"))
+SOURCE_EXTRACT_CHARS = int(os.environ.get("INTAKE_SOURCE_EXTRACT_CHARS", "24000"))
 OLLAMA_NUM_THREAD = int(os.environ.get("OLLAMA_NUM_THREAD", str(os.cpu_count() or 4)))
 # -1 = as many layers as fit on GPU; leftover layers run on CPU.
 OLLAMA_NUM_GPU = int(os.environ.get("OLLAMA_NUM_GPU", "-1"))
-MAX_QUESTIONNAIRE_CHARS = int(os.environ.get("INTAKE_MAX_Q_CHARS", "12000"))
-QUESTIONNAIRE_STRING_LIMIT = int(os.environ.get("INTAKE_Q_STRING_LIMIT", "600"))
+MAX_QUESTIONNAIRE_CHARS = int(os.environ.get("INTAKE_MAX_Q_CHARS", "20000"))
+QUESTIONNAIRE_STRING_LIMIT = int(os.environ.get("INTAKE_Q_STRING_LIMIT", "1500"))
 
 # Best-effort fetch of applicant-provided URLs (LinkedIn/Scholar/media/etc.)
 URL_FETCH_ENABLED = os.environ.get("INTAKE_URL_FETCH", "1").strip().lower() not in {
@@ -50,5 +50,5 @@ URL_FETCH_ENABLED = os.environ.get("INTAKE_URL_FETCH", "1").strip().lower() not 
     "off",
 }
 URL_FETCH_TIMEOUT = float(os.environ.get("INTAKE_URL_FETCH_TIMEOUT", "20"))
-URL_FETCH_MAX_CHARS = int(os.environ.get("INTAKE_URL_FETCH_MAX_CHARS", "12000"))
-URL_FETCH_MAX_URLS = int(os.environ.get("INTAKE_URL_FETCH_MAX_URLS", "15"))
+URL_FETCH_MAX_CHARS = int(os.environ.get("INTAKE_URL_FETCH_MAX_CHARS", "16000"))
+URL_FETCH_MAX_URLS = int(os.environ.get("INTAKE_URL_FETCH_MAX_URLS", "20"))

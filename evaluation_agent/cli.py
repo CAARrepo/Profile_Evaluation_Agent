@@ -19,6 +19,9 @@ console = Console()
 def cmd_run(args: argparse.Namespace) -> int:
     console.print(f"[yellow]Using Ollama model:[/yellow] {args.model}")
     console.print("[yellow]Evaluating criteria with LLM (this may take several minutes)...[/yellow]")
+    from .llm import reset_token_usage
+
+    reset_token_usage()
     agent = EvaluationAgent(model=args.model)
     if args.intake_file:
         result = agent.evaluate_file(args.intake_file, category_override=args.category)
@@ -57,6 +60,18 @@ def _print_result_dict(result: dict, out: Path) -> None:
     console.print(table)
     if result.get("final_merits"):
         console.print(f"Final merits: {result['final_merits'].get('sustained_acclaim_assessment', '')[:200]}")
+    usage = (result.get("raw_notes") or {}).get("token_usage") or {}
+    if usage:
+        console.print(
+            f"[cyan]Tokens[/cyan] {usage.get('total_tokens', 0)} total "
+            f"({usage.get('prompt_tokens', 0)} prompt + {usage.get('completion_tokens', 0)} completion, "
+            f"{usage.get('call_count', 0)} calls)"
+        )
+        for row in usage.get("calls") or []:
+            console.print(
+                f"  {row.get('label')}: {row.get('prompt_tokens')} in / "
+                f"{row.get('completion_tokens')} out / {row.get('total_tokens')} total"
+            )
     if result.get("underlying_eb2"):
         u = result["underlying_eb2"]
         console.print(f"Underlying EB-2: {u.get('qualifying_path')} -> {u.get('status')}")

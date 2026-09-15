@@ -19,13 +19,28 @@ _FOLDER_TO_KEYS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("o1-article", ("publications",)),
     ("o1-w2", ("high_salary",)),
     ("o1-tax", ("high_salary",)),
+    ("employer-award", ("awards",)),
+    ("internal-award", ("awards",)),
+    ("/03-awards/", ("awards",)),
+    ("peer-invite", ("peer_review", "judging")),
+    ("peer-paper", ("publications", "peer_review")),
+    ("peer-proof", ("peer_review", "judging")),
+    ("/06-judging/", ("peer_review", "judging")),
+    ("/07-publications/", ("publications",)),
+    ("article-", ("publications",)),
+    ("w2-0", ("high_salary",)),
+    ("/tax-0", ("high_salary",)),
+    ("/08-compensation/", ("high_salary",)),
+    ("presentation-", ("conferences", "publications")),
+    ("/09-contributions/", ("patents", "conferences")),
 )
 
 _FILENAME_TO_KEYS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (("1099", "w-2", "w2", "tax transcript", "tax_transcript"), ("high_salary",)),
     (("award", "darpa", "tuition", "katsh"), ("awards",)),
     (("neurips",), ("peer_review", "judging", "publications")),
-    (("ieee",), ("publications",)),
+    (("ieee", "aircraft", "satellite"), ("publications",)),
+    (("pptx", "powerpoint", "iccpct"), ("conferences", "publications")),
 )
 
 

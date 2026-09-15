@@ -24,15 +24,30 @@ _SENSITIVE_LEAD_KEYS = {
 _DOC_PRIORITY = (
     ("/resume/", 0),
     ("\\resume\\", 0),
+    ("01-background", 0),
     ("o1-award", 1),
     ("o1-internal-award", 1),
     ("o1-employer-award", 1),
+    ("/03-awards/", 1),
+    ("employer-award", 1),
+    ("internal-award", 1),
     ("o1-peer-invite", 1),
+    ("peer-invite", 1),
     ("o1-peer-proof", 2),
+    ("peer-proof", 2),
     ("o1-w2", 2),
     ("o1-tax", 2),
+    ("/08-compensation/", 2),
+    ("w2-0", 2),
+    ("tax-0", 2),
     ("o1-article", 3),
+    ("/07-publications/", 3),
+    ("article-", 3),
     ("o1-peer-paper", 4),
+    ("peer-paper", 4),
+    ("/06-judging/", 2),
+    ("/09-contributions/", 4),
+    ("presentation-", 4),
 )
 
 
@@ -63,6 +78,33 @@ def discover_leads_csv(datasets_dir: Path = DATASETS_DIR) -> Path:
     return USER_INFO_CSV
 
 
+def discover_questionnaire_csv(datasets_dir: Path = DATASETS_DIR) -> Path | None:
+    if QUESTIONNAIRE_CSV.exists():
+        return QUESTIONNAIRE_CSV
+    for path in sorted(datasets_dir.glob("*.csv")):
+        headers = set(_csv_headers(path))
+        if {"lead_id", "answers"} <= headers:
+            return path
+        if {"id", "answers"} <= headers and "first_name" not in headers:
+            return path
+    return None
+
+
+def _bind_orphan_questionnaire(
+    questionnaires: dict[str, dict[str, Any]],
+    lead_ids: list[str],
+) -> None:
+    """If export IDs drifted (new lead UUID, old answers row), keep the only questionnaire."""
+    if not lead_ids or not questionnaires:
+        return
+    missing = [lid for lid in lead_ids if lid not in questionnaires]
+    unused = [qid for qid in questionnaires if qid not in lead_ids]
+    if len(missing) == 1 and len(unused) == 1:
+        payload = questionnaires[unused[0]]
+        payload["lead_id"] = missing[0]
+        questionnaires[missing[0]] = payload
+
+
 def _parse_answers_cell(raw: str) -> dict[str, Any]:
     text = raw or "{}"
     try:
@@ -80,7 +122,7 @@ def load_leads(path: Path | None = None) -> list[dict[str, str]]:
 def load_questionnaires(path: Path | None = None) -> dict[str, dict[str, Any]]:
     """Map lead_id -> parsed questionnaire answers JSON."""
     out: dict[str, dict[str, Any]] = {}
-    questionnaire_path = path or (QUESTIONNAIRE_CSV if QUESTIONNAIRE_CSV.exists() else None)
+    questionnaire_path = path or discover_questionnaire_csv()
     if questionnaire_path and questionnaire_path.exists():
         for row in _read_csv_dicts(questionnaire_path):
             lead_id = row.get("lead_id") or ""
@@ -95,10 +137,14 @@ def load_questionnaires(path: Path | None = None) -> dict[str, dict[str, Any]]:
             }
 
     leads_csv = discover_leads_csv()
+    lead_ids: list[str] = []
     if leads_csv.exists():
+        lead_rows = _read_csv_dicts(leads_csv)
+        lead_ids = [r.get("id") or r.get("lead_id") or "" for r in lead_rows]
+        lead_ids = [lid for lid in lead_ids if lid]
         headers = set(_csv_headers(leads_csv))
         if "answers" in headers:
-            for row in _read_csv_dicts(leads_csv):
+            for row in lead_rows:
                 lead_id = row.get("id") or row.get("lead_id") or ""
                 if not lead_id or lead_id in out:
                     continue
@@ -111,6 +157,7 @@ def load_questionnaires(path: Path | None = None) -> dict[str, dict[str, Any]]:
                     "created_at": row.get("answers_created_at") or row.get("created_at"),
                     "updated_at": row.get("answers_updated_at") or row.get("updated_at"),
                 }
+    _bind_orphan_questionnaire(out, lead_ids)
     return out
 
 
@@ -211,7 +258,12 @@ _UUID_FILE_PREFIX = re.compile(
 
 
 def _logical_filename(name: str) -> str:
-    return _UUID_FILE_PREFIX.sub("", name).lower()
+    out = name
+    while True:
+        stripped = _UUID_FILE_PREFIX.sub("", out, count=1)
+        if stripped == out:
+            return stripped.lower()
+        out = stripped
 
 
 def extract_documents(paths: list[Path], max_chars: Optional[int] = None) -> list[dict[str, Any]]:

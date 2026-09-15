@@ -18,7 +18,7 @@ EVAL_OUTPUT_DIR = ROOT_DIR / "evaluation_outputs"
 # Must stay identical to intake_agent.config.OLLAMA_NUM_CTX: Ollama keeps one
 # runner per (model, context) pair, so a mismatch makes it unload and reload the
 # model on every switch between the two agents.
-OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "16384"))
+OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "32768"))
 
 # Non-streaming requests, so this covers the whole generation. Kept in step with
 # intake_agent.config.OLLAMA_TIMEOUT.

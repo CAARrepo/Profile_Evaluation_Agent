@@ -23,6 +23,50 @@ from .config import (
 
 _SSL_ENV_KEYS = ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")
 
+_token_usage: dict[str, Any] = {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "calls": [],
+}
+
+
+def reset_token_usage() -> None:
+    _token_usage["prompt_tokens"] = 0
+    _token_usage["completion_tokens"] = 0
+    _token_usage["calls"] = []
+
+
+def token_usage() -> dict[str, Any]:
+    prompt = int(_token_usage["prompt_tokens"])
+    completion = int(_token_usage["completion_tokens"])
+    return {
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "total_tokens": prompt + completion,
+        "call_count": len(_token_usage["calls"]),
+        "calls": list(_token_usage["calls"]),
+    }
+
+
+def _record_usage(body: dict[str, Any], *, label: str) -> None:
+    prompt = int(body.get("prompt_eval_count") or 0)
+    completion = int(body.get("eval_count") or 0)
+    row = {
+        "label": label or "chat_json",
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "total_tokens": prompt + completion,
+    }
+    _token_usage["prompt_tokens"] += prompt
+    _token_usage["completion_tokens"] += completion
+    _token_usage["calls"].append(row)
+    running = int(_token_usage["prompt_tokens"]) + int(_token_usage["completion_tokens"])
+    print(
+        f"[tokens] {row['label']}: {prompt} prompt + {completion} completion "
+        f"= {row['total_tokens']} (running total {running})",
+        flush=True,
+    )
+
 
 class OllamaError(RuntimeError):
     pass
@@ -73,6 +117,7 @@ def chat_json(
     model: str = OLLAMA_MODEL,
     host: str = OLLAMA_HOST,
     temperature: float = 0.1,
+    label: str = "",
 ) -> dict[str, Any]:
     """Call Ollama chat and parse a JSON object from the response."""
     payload = {
@@ -94,7 +139,9 @@ def chat_json(
         resp = client.post("/api/chat", json=payload)
         if resp.status_code >= 400:
             raise OllamaError(f"Ollama chat failed ({resp.status_code}): {resp.text[:500]}")
-        content = resp.json().get("message", {}).get("content", "")
+        body = resp.json()
+    _record_usage(body, label=label)
+    content = (body.get("message") or {}).get("content", "")
     return parse_json_object(content)
 
 

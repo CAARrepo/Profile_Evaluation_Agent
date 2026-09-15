@@ -28,6 +28,7 @@ class FakeJudge:
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.last_final_merits_kwargs: dict[str, Any] | None = None
+        self.criterion_calls: list[dict[str, Any]] = []
 
     def judge_criterion(
         self,
@@ -48,6 +49,13 @@ class FakeJudge:
         profile_classification: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         cid = str(criterion.get("criterion_id") or "")
+        self.criterion_calls.append(
+            {
+                "criterion_id": cid,
+                "applicant_facts": list(applicant_facts),
+                "profile_context": list(profile_context or []),
+            }
+        )
         note = (occupation_note or "").lower()
         required = list(legal_requirement or criterion.get("required_elements") or [])
         if "not_applicable" in note and not applicant_facts:

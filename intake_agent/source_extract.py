@@ -72,6 +72,7 @@ def extract_one_source(
             user=str(payload),
             model=model,
             host=host,
+            label=f"intake_extract:{label}",
         )
     except Exception:  # noqa: BLE001 - one failed file must not stop intake
         return {}

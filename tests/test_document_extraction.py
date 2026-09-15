@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from evaluation_agent import EvaluationAgent
-from evaluation_agent.evaluators.base import PROFILE_CONTEXT_LIMIT
 from evaluation_agent.evaluators.o1a import O1AEvaluator
 from evaluation_agent.scoring import collect_mapped_facts
 from intake_agent.agent import IntakeAgent, merge_profiles
@@ -41,6 +40,14 @@ def test_folder_and_filename_map_onto_criteria():
         filename="resume.pdf",
         relative_path="lead/resume/resume.pdf",
     ) == []
+    assert "awards" in criterion_keys_for_document(
+        filename="tuition.pdf",
+        relative_path="lead/03-awards/award-0/tuition.pdf",
+    )
+    assert criterion_keys_for_document(
+        filename="1099-NEC_2025.pdf",
+        relative_path="lead/08-compensation/w2-0/1099-NEC_2025.pdf",
+    ) == ["high_salary"]
 
 
 def test_seed_profile_attaches_pdf_excerpts():
@@ -178,15 +185,19 @@ def test_evaluation_receives_pdf_excerpts_as_facts():
     }
     facts, _, _ = collect_mapped_facts(intake, ["high_salary"])
     assert any("1099-NEC" in f and "85000" in f for f in facts)
+    assert not any("resume.pdf" in f.lower() for f in facts)
 
     context = O1AEvaluator(judge=FakeJudge()).profile_context_facts(intake)  # type: ignore[arg-type]
-    assert any("Uploaded PDF (resume.pdf)" in line for line in context)
-    assert context.index(next(line for line in context if "Uploaded PDF" in line)) < PROFILE_CONTEXT_LIMIT
+    assert any("Applicant: Ada Lovelace" in line for line in context)
+    assert not any("Uploaded PDF" in line for line in context)
+    assert not any("Claim:" in line for line in context)
 
     agent = EvaluationAgent(judge=FakeJudge())  # type: ignore[arg-type]
     result = agent.evaluate_intake(intake)
     salary = next(c for c in result.criteria if c.criterion_id == "o1a_high_salary")
     assert any("85000" in f for f in salary.applicant_facts)
+    awards = next(c for c in result.criteria if c.criterion_id == "o1a_awards")
+    assert not any("85000" in f for f in awards.applicant_facts)
 
 
 def test_extract_documents_keeps_every_file(tmp_path):

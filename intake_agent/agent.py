@@ -565,6 +565,7 @@ class IntakeAgent:
             user=build_user_prompt(bundle, visa_category=category),
             model=self.model,
             host=self.host,
+            label="intake_merge",
         )
         # Force case/identity consistency
         llm_data["case_id"] = seeded.case_id

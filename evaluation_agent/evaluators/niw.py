@@ -23,7 +23,15 @@ from ..schema import (
     NIWUnderlyingEB2,
     ProfileClassification,
 )
-from ..scoring import collect_mapped_facts, merge_gap_lists, overall_rating_from_niw, summarize_statuses
+from ..scoring import (
+    collect_mapped_facts,
+    compact_education_facts,
+    compact_employment_facts,
+    merge_gap_lists,
+    overall_rating_from_niw,
+    summarize_statuses,
+    unique_facts,
+)
 from .base import PROFILE_CONTEXT_LIMIT, BaseEvaluator
 
 
@@ -102,24 +110,17 @@ class NIWEvaluator(BaseEvaluator):
         return result
 
     def _collect_niw_facts(self, intake: dict[str, Any]) -> tuple[list[str], list[str]]:
-        facts = self.profile_context_facts(intake)
-        award_facts, gaps, _ = collect_mapped_facts(
+        mapped, gaps, _ = collect_mapped_facts(
             intake,
             ["awards", "media", "publications", "critical_role", "patents", "memberships", "google_scholar"],
         )
-        facts.extend(award_facts)
-        for edu in intake.get("education") or []:
-            deg = edu.get("degree") or ""
-            inst = edu.get("institution") or ""
-            if deg or inst:
-                facts.append(f"Education: {deg} — {inst}".strip(" —"))
-        seen: set[str] = set()
-        uniq: list[str] = []
-        for f in facts:
-            if f and f not in seen:
-                seen.add(f)
-                uniq.append(f)
-        return uniq, gaps
+        facts = unique_facts(
+            self.profile_context_facts(intake),
+            compact_employment_facts(intake),
+            compact_education_facts(intake),
+            mapped,
+        )
+        return facts, gaps
 
     def _evaluate_underlying_eb2(
         self,
@@ -226,7 +227,7 @@ class NIWEvaluator(BaseEvaluator):
                     criterion_def=cdef,
                     intake_keys=keys,
                     occupation_note=(
-                        "Also consider education/employment listed in profile_context for this "
+                        "Also consider education/employment listed in applicant_facts for this "
                         "exceptional-ability regulatory category."
                     ),
                     profile_classification=profile,

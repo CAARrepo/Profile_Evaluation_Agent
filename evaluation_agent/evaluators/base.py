@@ -10,7 +10,15 @@ from ..config import DEFAULT_DISCLAIMER, OLLAMA_HOST, OLLAMA_MODEL
 from ..kb_loader import category_section, kb_version, load_knowledge_base
 from ..llm_judge import LLMJudge
 from ..schema import CriterionEvaluation, EvaluationResult, VisaCategory
-from ..scoring import collect_mapped_facts, merge_gap_lists
+from ..scoring import (
+    collect_mapped_facts,
+    compact_education_facts,
+    compact_employment_facts,
+    compact_identity_facts,
+    compact_salary_facts,
+    merge_gap_lists,
+    unique_facts,
+)
 
 # Intake questionnaire keys → knowledge-base criterion_ids
 O1A_INTAKE_MAP: dict[str, list[str]] = {
@@ -38,7 +46,11 @@ EB1A_INTAKE_MAP: dict[str, list[str]] = {
 }
 
 
-PROFILE_CONTEXT_LIMIT = 12
+PROFILE_CONTEXT_LIMIT = 8
+
+_ROLE_CRITERION_IDS = {"eb2_ea_ten_years_experience"}
+_EDU_CRITERION_IDS = {"eb2_ea_academic_record"}
+_SALARY_CRITERION_IDS = {"eb2_ea_salary"}
 
 
 class BaseEvaluator(ABC):
@@ -75,47 +87,24 @@ class BaseEvaluator(ABC):
         )
 
     def profile_context_facts(self, intake: dict[str, Any]) -> list[str]:
-        facts: list[str] = []
-        identity = intake.get("identity") or {}
-        name = f"{identity.get('first_name', '')} {identity.get('last_name', '')}".strip()
-        if name:
-            facts.append(f"Applicant: {name}")
-        if intake.get("field_of_endeavor"):
-            facts.append(f"Field of endeavor: {intake['field_of_endeavor']}")
-        if intake.get("proposed_endeavor"):
-            facts.append(f"Proposed endeavor: {intake['proposed_endeavor']}")
-        if intake.get("national_importance_summary"):
-            facts.append(f"National importance: {intake['national_importance_summary']}")
-        if intake.get("summary"):
-            facts.append(f"Intake summary: {intake['summary']}")
-        for job in intake.get("employment") or []:
-            org = job.get("organization") or ""
-            title = job.get("title") or ""
-            if org or title:
-                facts.append(f"Employment: {title} at {org}".strip())
-        for edu in intake.get("education") or []:
-            deg = edu.get("degree") or ""
-            inst = edu.get("institution") or ""
-            if deg or inst:
-                facts.append(f"Education: {deg} — {inst}".strip(" —"))
+        """Short identity header shared by every call — not the evidence record."""
+        return compact_identity_facts(intake)[:PROFILE_CONTEXT_LIMIT]
 
-        # Uploaded PDF excerpts before long questionnaire claims so they survive truncation.
-        documents: list[str] = []
-        urls: list[str] = []
-        for ev in intake.get("evidence_index") or []:
-            if not isinstance(ev, dict):
-                continue
-            source = str(ev.get("source") or "")
-            excerpt = (ev.get("excerpt") or "").strip()
-            ref = (ev.get("reference") or "").strip()
-            if not excerpt:
-                continue
-            if source == "document":
-                documents.append(f"Uploaded PDF ({ref}): {excerpt[:350]}")
-            elif source in {"url", "linkedin", "google_scholar", "media"}:
-                urls.append(f"Fetched {source} ({ref}): {excerpt[:350]}")
-        claims = [f"Claim: {claim}" for claim in (intake.get("claims") or []) if claim]
-        return facts + documents[:6] + urls[:4] + claims
+    def _criterion_facts(
+        self,
+        intake: dict[str, Any],
+        intake_keys: list[str],
+        criterion_id: str,
+    ) -> tuple[list[str], list[str], str]:
+        facts, gaps, answer = collect_mapped_facts(intake, intake_keys)
+        extras: list[str] = []
+        if "critical_role" in intake_keys or criterion_id in _ROLE_CRITERION_IDS:
+            extras.extend(compact_employment_facts(intake))
+        if criterion_id in _EDU_CRITERION_IDS:
+            extras.extend(compact_education_facts(intake))
+        if "high_salary" in intake_keys or criterion_id in _SALARY_CRITERION_IDS:
+            extras.extend(compact_salary_facts(intake))
+        return unique_facts(facts, extras), gaps, answer
 
     def llm_evaluate_criterion(
         self,
@@ -129,7 +118,9 @@ class BaseEvaluator(ABC):
         similar_sustained_cases: list[dict[str, Any]] | None = None,
         similar_denied_cases: list[dict[str, Any]] | None = None,
     ) -> CriterionEvaluation:
-        facts, gaps, answer = collect_mapped_facts(intake, intake_keys)
+        facts, gaps, answer = self._criterion_facts(
+            intake, intake_keys, str(criterion_def.get("criterion_id") or "")
+        )
         examples = select_aao_examples(
             self.visa_category,
             str(criterion_def.get("criterion_id") or ""),

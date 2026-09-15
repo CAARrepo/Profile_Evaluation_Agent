@@ -116,7 +116,7 @@ def measure_evaluation(lead_id: str) -> dict[str, Any]:
         print(f"  {cid:34s} {total:6d} tokens  ({len(user):6d} chars, KB block ~{kb_only})")
 
     ctx_tokens = count_tokens(json.dumps(context, ensure_ascii=False, indent=2))
-    print(f"\n  shared profile_context block: ~{ctx_tokens} tokens (repeated in every criterion call)")
+    print(f"\n  shared identity profile_context: ~{ctx_tokens} tokens (repeated in every criterion call)")
     peak = max(r["tokens"] for r in rows)
     print(f"  calls: {len(rows)} | peak prompt: {peak} tokens | total prompt tokens: {sum(r['tokens'] for r in rows)}")
     return {"rows": rows, "peak": peak, "context_tokens": ctx_tokens, "system_tokens": sys_tokens}

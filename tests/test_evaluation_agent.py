@@ -99,3 +99,122 @@ def test_category_override(agent: EvaluationAgent):
     result = agent.evaluate_intake(intake, category_override="EB-1A")
     assert result.visa_category == "EB-1A"
     assert len(result.criteria) == 10
+
+
+def test_each_criterion_receives_only_mapped_evidence():
+    judge = FakeJudge()
+    agent = EvaluationAgent(judge=judge)  # type: ignore[arg-type]
+    intake = {
+        "case_id": "scoped-o1a",
+        "visa_category": "O-1A",
+        "identity": {
+            "first_name": "Ada",
+            "last_name": "Lovelace",
+            "lead_id": "scoped-o1a",
+            "position": "Lead Engineer",
+            "company_name": "Example Labs",
+            "salary": "180000",
+        },
+        "field_of_endeavor": "biometrics",
+        "claims": [
+            "awards: national prize",
+            "memberships: Sigma Xi",
+            "peer_review: NeurIPS ethics review",
+        ],
+        "criteria": [
+            {
+                "key": "awards",
+                "applicant_answer": "yes",
+                "claim_summary": "Certificate of Recognition for computer vision",
+                "evidence_items": [
+                    {
+                        "source": "document",
+                        "reference": "KATSH_ID_Outstanding_Computer_V.pdf",
+                        "excerpt": "Award for outstanding computer vision innovation",
+                    },
+                    {
+                        "source": "document",
+                        "reference": "1099-NEC_2025.pdf",
+                        "excerpt": "Form 1099-NEC nonemployee compensation 85000",
+                    },
+                    {
+                        "source": "document",
+                        "reference": "resume.pdf",
+                        "excerpt": "Developed a palm authentication system",
+                    },
+                ],
+            },
+            {
+                "key": "memberships",
+                "applicant_answer": "yes",
+                "claim_summary": "Sigma Xi Full Member",
+                "evidence_items": [
+                    {
+                        "source": "url",
+                        "reference": "https://www.sigmaxi.org/members",
+                        "excerpt": "Sigma Xi full membership qualifications",
+                    }
+                ],
+            },
+            {
+                "key": "peer_review",
+                "applicant_answer": "yes",
+                "claim_summary": "NeurIPS 2026 ethics reviewer",
+                "evidence_items": [
+                    {
+                        "source": "document",
+                        "reference": "NeurIPS_invite.pdf",
+                        "excerpt": "Invited to serve as an ethics reviewer for NeurIPS 2026",
+                    }
+                ],
+            },
+            {
+                "key": "high_salary",
+                "applicant_answer": "yes",
+                "claim_summary": "compensation claimed",
+                "evidence_items": [
+                    {
+                        "source": "document",
+                        "reference": "1099-NEC_2025.pdf",
+                        "excerpt": "Form 1099-NEC nonemployee compensation 85000",
+                    }
+                ],
+            },
+        ],
+        "evidence_index": [
+            {
+                "source": "document",
+                "reference": "resume.pdf",
+                "excerpt": "Ada Lovelace research scientist in biometrics",
+            }
+        ],
+    }
+    result = agent.evaluate_intake(intake)
+    awards = next(c for c in result.criteria if c.criterion_id == "o1a_awards")
+    membership = next(c for c in result.criteria if c.criterion_id == "o1a_membership")
+    judging = next(c for c in result.criteria if c.criterion_id == "o1a_judging")
+    salary = next(c for c in result.criteria if c.criterion_id == "o1a_high_salary")
+
+    awards_blob = " ".join(awards.applicant_facts).lower()
+    assert "computer vision innovation" in awards_blob
+    assert "85000" not in awards_blob
+    assert "resume.pdf" not in awards_blob
+    assert "sigma xi" not in awards_blob
+    assert "neurips" not in awards_blob
+
+    assert any("sigma xi" in f.lower() for f in membership.applicant_facts)
+    assert not any("85000" in f for f in membership.applicant_facts)
+
+    assert any("neurips" in f.lower() for f in judging.applicant_facts)
+    assert not any("85000" in f for f in judging.applicant_facts)
+
+    assert any("85000" in f for f in salary.applicant_facts)
+    assert not any("neurips" in f.lower() for f in salary.applicant_facts)
+
+    awards_call = next(c for c in judge.criterion_calls if c["criterion_id"] == "o1a_awards")
+    context = " ".join(awards_call["profile_context"])
+    assert "Applicant: Ada Lovelace" in context
+    assert "Uploaded PDF" not in context
+    assert "Claim:" not in context
+    assert "resume.pdf" not in context
+    assert "1099-NEC" not in context

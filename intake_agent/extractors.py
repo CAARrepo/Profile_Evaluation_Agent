@@ -27,6 +27,8 @@ def extract_text(path: Path) -> str:
         return _extract_pdf(path)
     if suffix in {".docx", ".doc"}:
         return _extract_docx(path)
+    if suffix == ".pptx":
+        return _extract_pptx(path)
     if suffix in {".txt", ".md", ".csv"}:
         return path.read_text(encoding="utf-8", errors="ignore")
     # Some resumes are stored as `.docx.pdf` style names; try PDF first.
@@ -53,4 +55,25 @@ def _extract_docx(path: Path) -> str:
             cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
             if cells:
                 parts.append(" | ".join(cells))
+    return "\n".join(parts).strip()
+
+
+def _extract_pptx(path: Path) -> str:
+    """Read slide text from a .pptx without extra dependencies (OOXML zip)."""
+    import zipfile
+    from xml.etree import ElementTree as ET
+
+    ns_t = "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+    parts: list[str] = []
+    with zipfile.ZipFile(path) as zf:
+        slides = sorted(
+            name
+            for name in zf.namelist()
+            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+        )
+        for name in slides:
+            root = ET.fromstring(zf.read(name))
+            texts = [node.text.strip() for node in root.iter(ns_t) if node.text and node.text.strip()]
+            if texts:
+                parts.append(" ".join(texts))
     return "\n".join(parts).strip()

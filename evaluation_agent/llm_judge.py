@@ -110,6 +110,7 @@ class LLMJudge:
             user=user,
             model=self.model,
             host=self.host,
+            label=str(criterion.get("criterion_id") or "criterion"),
         )
         return _normalize_judgment(raw)
 
@@ -132,6 +133,7 @@ class LLMJudge:
             user=user,
             model=self.model,
             host=self.host,
+            label="niw_underlying_eb2",
         )
         return _normalize_judgment(raw)
 
@@ -166,6 +168,7 @@ class LLMJudge:
             user=user,
             model=self.model,
             host=self.host,
+            label=str(prong.get("prong_id") or "niw_prong"),
         )
         return _normalize_judgment(raw)
 
@@ -200,6 +203,7 @@ class LLMJudge:
             user=user,
             model=self.model,
             host=self.host,
+            label="final_merits",
         )
         notes = _as_str_list(raw.get("notes"), limit=8)
         return {
