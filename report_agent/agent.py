@@ -4,16 +4,27 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, REPORT_OUTPUT_DIR
+from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, OLLAMA_MODEL, REPORT_OUTPUT_DIR
 from .pdf_report import write_client_pdf
 from .renderer import build_full_report_bundle
 from .schema import ClientReportContent, InitialReport
 
 
 class ReportAgent:
-    """Template-based report generator. Does not re-evaluate or reclassify the case."""
+    """Client report generator. Does not re-evaluate or reclassify the case."""
+
+    def __init__(
+        self,
+        *,
+        use_llm: bool = True,
+        model: str | None = None,
+        writer: Optional[Callable[..., dict]] = None,
+    ) -> None:
+        self.use_llm = use_llm
+        self.model = model or OLLAMA_MODEL
+        self.writer = writer
 
     def generate_from_evaluation(
         self,
@@ -26,6 +37,9 @@ class ReportAgent:
             evaluation,
             intake=intake,
             evaluation_path=evaluation_path,
+            use_llm=self.use_llm,
+            model=self.model,
+            writer=self.writer,
         )
 
     def generate_for_lead(

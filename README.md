@@ -84,6 +84,7 @@ Turns Evaluation JSON into:
 - polished client-facing PDF: `report_outputs/<case_id>_initial_profile_evaluation.pdf`
 
 - Does **not** re-score or reclassify the case
+- Uses the same local Ollama model to write **Existing documents** types (research paper, PowerPoint presentation, offer letter, …) from intake-form slots; falls back to rule labels if the LLM is skipped
 - **`attorney_reviewed: false`**
 - Client-friendly status labels; no mid-sentence truncation
 
@@ -93,6 +94,9 @@ python -m report_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136
 
 # Or from an evaluation file:
 python -m report_agent run --evaluation-file evaluation_outputs/<id>_evaluation.json
+
+# Skip the report LLM and use intake-form folder labels only:
+python -m report_agent run --lead-id 00b14135-8fa0-4525-a88d-21605f615136 --no-llm
 ```
 
 Output:

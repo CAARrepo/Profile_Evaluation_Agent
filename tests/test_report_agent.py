@@ -59,7 +59,7 @@ def test_fix_mojibake_and_complete_sentences():
 
 def test_initial_report_markdown_json_and_pdf(tmp_path: Path):
     eval_dict, intake = _eval_o1a()
-    agent = ReportAgent()
+    agent = ReportAgent(use_llm=False)
     report, markdown, client = agent.generate_from_evaluation(
         eval_dict,
         intake=intake,
@@ -155,7 +155,7 @@ def test_zero_strong_multiple_potential_clarification(tmp_path: Path):
     }
     eval_dict["overall_profile_rating"] = "promising"
 
-    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    _, _, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
     joined = " ".join(client.overall_assessment_paragraphs)
     assert "Six potential criteria were identified for possible evidence development" in joined
     assert "Promising" in joined
@@ -187,7 +187,7 @@ def test_evidence_consolidated_and_no_mid_sentence_cut():
                 "This third sentence remains complete."
             )
             break
-    _, markdown, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    _, markdown, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
     assert "â€”" not in markdown and "â€™" not in markdown
     for row in client.criterion_rows:
         assert not row.explanation.endswith("...")
@@ -214,7 +214,7 @@ def test_pdf_table_and_bullets_keep_complete_sentences(tmp_path: Path):
             criterion["information_gaps"] = ["Award certificate."]
             break
 
-    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    _, _, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
     pdf_path = tmp_path / "complete_cells.pdf"
     write_client_pdf(client, pdf_path)
     compact = " ".join(
@@ -237,13 +237,66 @@ def test_pdf_builds_when_applicant_facts_include_long_pdf_excerpts(tmp_path: Pat
                 "Source document (24e27ca7-a031-4237-aa02-c00c7c37e001-TY2025_Tax_Transcript.pdf): Sensitive taxpayer data SSN XXX-XX-5688 " * 20,
             ]
             break
-    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    _, _, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
     awards = next(row for row in client.criterion_rows if "Prizes or Awards" in row.criterion_name)
-    assert any("KATSH ID Outstanding Computer Vision Innovation Award" in item for item in awards.existing_documents)
+    assert any(item == "Award certificate" for item in awards.existing_documents)
+    assert any(item == "Tax transcript" for item in awards.existing_documents)
     assert all("SSN" not in item for item in awards.existing_documents)
+    assert all("KATSH_ID" not in item and ".pdf" not in item.lower() for item in awards.existing_documents)
     pdf_path = tmp_path / "long_excerpts.pdf"
     write_client_pdf(client, pdf_path)
     assert pdf_path.exists() and pdf_path.stat().st_size > 1000
+
+
+def test_existing_documents_use_intake_form_document_types():
+    eval_dict, intake = _eval_o1a()
+    for criterion in eval_dict["criteria"]:
+        cid = criterion.get("criterion_id")
+        if cid == "o1a_scholarly_authorship":
+            criterion["applicant_facts"] = [
+                "Source document (07-publications/article-0/Aircraft_Detection.pdf): IEEE satellite paper abstract.",
+                "Source document (09-contributions/presentation-0/1154.pptx): Conference slides.",
+            ]
+        elif cid == "o1a_high_salary":
+            criterion["applicant_facts"] = [
+                "Source document (08-compensation/w2-0/KATSH_offer_letter.pdf): Salary 200000.",
+            ]
+    _, _, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
+    pubs = next(row for row in client.criterion_rows if "Scholarly" in row.criterion_name)
+    salary = next(row for row in client.criterion_rows if "Salary" in row.criterion_name)
+    assert "Research paper" in pubs.existing_documents
+    assert "PowerPoint presentation" in pubs.existing_documents
+    assert all(".pptx" not in item and "1154" not in item for item in pubs.existing_documents)
+    assert "Offer letter" in salary.existing_documents
+    assert all("KATSH_offer_letter" not in item for item in salary.existing_documents)
+
+
+def test_report_llm_writes_existing_document_types():
+    eval_dict, intake = _eval_o1a()
+    for criterion in eval_dict["criteria"]:
+        if criterion.get("criterion_id") == "o1a_scholarly_authorship":
+            criterion["applicant_facts"] = [
+                "Source document (07-publications/article-0/paper.pdf): IEEE conference paper.",
+            ]
+            break
+
+    def fake_writer(*, system: str, user: str):
+        assert "DOCUMENT TYPE" in system
+        assert "o1a_scholarly_authorship" in user
+        return {
+            "criteria": [
+                {
+                    "criterion_id": "o1a_scholarly_authorship",
+                    "existing_documents": ["Research paper", "paper.pdf"],
+                }
+            ]
+        }
+
+    _, _, client = ReportAgent(use_llm=True, writer=fake_writer).generate_from_evaluation(
+        eval_dict, intake=intake
+    )
+    pubs = next(row for row in client.criterion_rows if "Scholarly" in row.criterion_name)
+    assert pubs.existing_documents == ["Research paper"]
 
 
 def test_challenging_note_is_never_truncated_in_pdf(tmp_path: Path):
@@ -260,7 +313,7 @@ def test_challenging_note_is_never_truncated_in_pdf(tmp_path: Path):
             criterion["client_summary"] = ""
             criterion["reasoning_summary"] = long_reasoning
 
-    _, _, client = ReportAgent().generate_from_evaluation(eval_dict, intake=intake)
+    _, _, client = ReportAgent(use_llm=False).generate_from_evaluation(eval_dict, intake=intake)
     challenging_rows = [
         row for row in client.criterion_rows if O1A_CHALLENGING_NOTE in row.explanation
     ]
@@ -294,7 +347,7 @@ def test_generate_and_save_writes_pdf(tmp_path: Path):
     )
     (intake_dir / f"{case_id}_intake.json").write_text(json.dumps(intake), encoding="utf-8")
 
-    md, js, pdf = ReportAgent().generate_and_save(
+    md, js, pdf = ReportAgent(use_llm=False).generate_and_save(
         case_id,
         eval_dir=eval_dir,
         intake_dir=intake_dir,
@@ -312,7 +365,7 @@ def test_initial_report_niw_includes_prongs():
     evaluation = EvaluationAgent(judge=FakeJudge()).evaluate_intake(  # type: ignore[arg-type]
         json.loads((FIXTURES / "intake_niw.json").read_text(encoding="utf-8"))
     )
-    report, markdown, client = ReportAgent().generate_from_evaluation(
+    report, markdown, client = ReportAgent(use_llm=False).generate_from_evaluation(
         json.loads(evaluation.model_dump_json()),
         intake=json.loads((FIXTURES / "intake_niw.json").read_text(encoding="utf-8")),
     )

@@ -6,7 +6,7 @@ from evaluation_agent import EvaluationAgent
 from evaluation_agent.evaluators.o1a import O1AEvaluator
 from evaluation_agent.scoring import collect_mapped_facts
 from intake_agent.agent import IntakeAgent, merge_profiles
-from intake_agent.documents import criterion_keys_for_document
+from intake_agent.documents import criterion_keys_for_document, document_type_label
 from intake_agent.loaders import extract_documents
 from intake_agent.prompts import build_user_prompt, system_prompt
 from intake_agent.source_extract import attach_extracted_sources, window_source_text
@@ -48,6 +48,58 @@ def test_folder_and_filename_map_onto_criteria():
         filename="1099-NEC_2025.pdf",
         relative_path="lead/08-compensation/w2-0/1099-NEC_2025.pdf",
     ) == ["high_salary"]
+
+
+def test_intake_form_slots_become_document_type_labels():
+    assert (
+        document_type_label(
+            filename="Aircraft_Detection.pdf",
+            relative_path="lead/07-publications/article-0/Aircraft_Detection.pdf",
+        )
+        == "Research paper"
+    )
+    assert (
+        document_type_label(
+            filename="uuid-1154.pptx",
+            relative_path="lead/09-contributions/presentation-0/uuid-1154.pptx",
+        )
+        == "PowerPoint presentation"
+    )
+    assert (
+        document_type_label(
+            filename="Acme_offer_letter.pdf",
+            relative_path="lead/08-compensation/w2-0/Acme_offer_letter.pdf",
+        )
+        == "Offer letter"
+    )
+    assert (
+        document_type_label(
+            filename="1099-NEC_2025.pdf",
+            relative_path="lead/08-compensation/w2-0/1099-NEC_2025.pdf",
+        )
+        == "1099"
+    )
+    assert (
+        document_type_label(
+            filename="TY2025_Tax_Transcript.pdf",
+            relative_path="lead/08-compensation/tax-0/TY2025_Tax_Transcript.pdf",
+        )
+        == "Tax transcript"
+    )
+    assert (
+        document_type_label(
+            filename="NeurIPS_invite.pdf",
+            relative_path="lead/06-judging/peer-invite-0/NeurIPS_invite.pdf",
+        )
+        == "Peer-review invitation"
+    )
+    assert (
+        document_type_label(
+            filename="KATSH_ID_Outstanding_Computer_Vision_Innovation_Award.pdf",
+            relative_path="",
+        )
+        == "Award certificate"
+    )
 
 
 def test_seed_profile_attaches_pdf_excerpts():

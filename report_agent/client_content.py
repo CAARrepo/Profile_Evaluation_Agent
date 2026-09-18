@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .config import (
     DEFAULT_DISCLAIMER,
@@ -21,14 +21,20 @@ from .text_utils import (
     consolidate_existing_documents,
     explain_overall_rating,
     fix_mojibake,
+    lead_document_path_index,
 )
+from .writer import write_existing_documents
 
 
 def build_client_content(
     evaluation: dict[str, Any],
     report: InitialReport,
     *,
+    intake: Optional[dict[str, Any]] = None,
     assessment_date: Optional[str] = None,
+    use_llm: bool = False,
+    model: str = "",
+    writer: Optional[Callable[..., dict]] = None,
 ) -> ClientReportContent:
     category = report.visa_category or str(evaluation.get("visa_category") or "")
     title = f"Initial {category} Profile Evaluation"
@@ -39,6 +45,19 @@ def build_client_content(
     priority_opps: list[str] = []
     evidence_pool: list[str] = []
     gap_pool: list[str] = []
+    path_index = lead_document_path_index(
+        report.case_id or str((intake or {}).get("case_id") or "")
+    )
+    llm_existing: dict[str, list[str]] = {}
+    if use_llm or writer is not None:
+        from .config import OLLAMA_MODEL
+
+        llm_existing = write_existing_documents(
+            evaluation,
+            path_index=path_index,
+            model=model or OLLAMA_MODEL,
+            writer=writer,
+        )
 
     for c in evaluation.get("criteria") or []:
         if not isinstance(c, dict):
@@ -56,9 +75,10 @@ def build_client_content(
             [str(x) for x in (c.get("recommended_evidence") or [])],
             limit=5,
         )
-        existing_docs = consolidate_existing_documents(
+        existing_docs = llm_existing.get(cid) or consolidate_existing_documents(
             [str(x) for x in (c.get("applicant_facts") or [])],
             limit=6,
+            path_index=path_index,
         )
         outstanding_docs = consolidate_evidence(
             [str(x) for x in (c.get("information_gaps") or [])] + list(top_evidence),

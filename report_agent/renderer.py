@@ -137,15 +137,25 @@ def build_full_report_bundle(
     *,
     intake: Optional[dict[str, Any]] = None,
     evaluation_path: str = "",
+    use_llm: bool = False,
+    model: str = "",
+    writer=None,
 ) -> tuple[InitialReport, str, ClientReportContent]:
     report = build_report_model(
         evaluation,
         intake=intake,
         evaluation_path=evaluation_path,
     )
-    client = build_client_content(evaluation, report)
+    client = build_client_content(
+        evaluation,
+        report,
+        intake=intake,
+        use_llm=use_llm,
+        model=model,
+        writer=writer,
+    )
     report.client_criteria = [row.model_dump() for row in client.criterion_rows]
-    markdown = render_markdown(report, evaluation, client)
+    markdown = render_markdown(report, evaluation, client, intake=intake)
     return report, markdown, client
 
 
@@ -153,9 +163,11 @@ def render_markdown(
     report: InitialReport,
     evaluation: dict[str, Any],
     client: Optional[ClientReportContent] = None,
+    *,
+    intake: Optional[dict[str, Any]] = None,
 ) -> str:
     if client is None:
-        client = build_client_content(evaluation, report)
+        client = build_client_content(evaluation, report, intake=intake)
 
     lines: list[str] = [
         f"# {client.document_title}",

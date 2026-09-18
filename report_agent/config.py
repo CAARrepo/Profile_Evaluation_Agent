@@ -12,6 +12,16 @@ INTAKE_OUTPUT_DIR = ROOT_DIR / "intake_outputs"
 REPORT_OUTPUT_DIR = ROOT_DIR / "report_outputs"
 STATIC_COPY_DIR = Path(__file__).resolve().parent / "static_copy"
 
+# Same Ollama runner as intake/evaluation so the model is not unloaded between agents.
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.environ.get("EVAL_OLLAMA_MODEL") or os.environ.get(
+    "OLLAMA_MODEL", "qwen2.5:7b-instruct"
+)
+OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "32768"))
+OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "1800"))
+OLLAMA_NUM_THREAD = int(os.environ.get("OLLAMA_NUM_THREAD", str(os.cpu_count() or 4)))
+OLLAMA_NUM_GPU = int(os.environ.get("OLLAMA_NUM_GPU", "-1"))
+
 DEFAULT_DISCLAIMER = (
     "This is a preliminary AI-assisted profile assessment only. "
     "It is not legal advice, not an attorney opinion, and not a determination of "

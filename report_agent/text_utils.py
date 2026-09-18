@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Optional
 
 # Common mojibake from UTF-8 bytes misread as Windows-1252 / Latin-1
 _MOJIBAKE_MAP = (
@@ -109,9 +110,43 @@ def human_document_name(reference: str) -> str:
     """Turn a stored PDF path into a short client-facing label."""
     name = str(reference or "").replace("\\", "/").split("/")[-1].strip()
     name = _UUID_FILE_PREFIX.sub("", name)
-    name = re.sub(r"\.(pdf|docx?|png|jpe?g|txt)$", "", name, flags=re.I)
+    name = re.sub(r"\.(pdf|docx?|pptx?|pptm|png|jpe?g|txt)$", "", name, flags=re.I)
     name = name.replace("_", " ").replace("-", " ")
     return " ".join(name.split())
+
+
+def lead_document_path_index(case_id: str) -> dict[str, str]:
+    """Map uploaded basenames to intake-form relative paths under lead-documents."""
+    if not case_id:
+        return {}
+    try:
+        from intake_agent.config import LEAD_DOCUMENTS_DIR
+    except ImportError:
+        return {}
+    root = LEAD_DOCUMENTS_DIR / case_id
+    if not root.is_dir():
+        return {}
+    index: dict[str, str] = {}
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(LEAD_DOCUMENTS_DIR).as_posix()
+        index[path.name] = rel
+        stripped = _UUID_FILE_PREFIX.sub("", path.name)
+        if stripped and stripped not in index:
+            index[stripped] = rel
+    return index
+
+
+def _uploaded_file_type(reference: str, path_index: Optional[dict[str, str]] = None) -> str:
+    from intake_agent.documents import document_type_label
+
+    ref = str(reference or "").replace("\\", "/").strip()
+    name = ref.split("/")[-1]
+    relative = ref if "/" in ref else ""
+    if path_index:
+        relative = path_index.get(name) or path_index.get(_UUID_FILE_PREFIX.sub("", name)) or relative
+    return document_type_label(filename=name or ref, relative_path=relative)
 
 
 def _one_client_line(text: str, max_chars: int = 180) -> str:
@@ -127,7 +162,11 @@ def _one_client_line(text: str, max_chars: int = 180) -> str:
     return cut
 
 
-def client_existing_document_line(text: str) -> str:
+def client_existing_document_line(
+    text: str,
+    *,
+    path_index: Optional[dict[str, str]] = None,
+) -> str:
     """PDF table cells need short labels, not dumped PDF body text."""
     cleaned = " ".join(fix_mojibake(text or "").split())
     if not cleaned:
@@ -136,8 +175,8 @@ def client_existing_document_line(text: str) -> str:
     if source_match:
         source = (source_match.group("source") or "").strip().lower()
         ref = (source_match.group("ref") or "").strip()
-        if source == "document" or ref.lower().endswith((".pdf", ".docx", ".doc")):
-            return human_document_name(ref)
+        if source == "document":
+            return _uploaded_file_type(ref, path_index)
         return _one_client_line(source_match.group("body") or "")
     applicant_match = _APPLICANT_FACT.match(cleaned)
     if applicant_match:
@@ -150,8 +189,15 @@ def client_existing_document_line(text: str) -> str:
     return _one_client_line(cleaned)
 
 
-def consolidate_existing_documents(items: list[str], limit: int = 6) -> list[str]:
-    labeled = [client_existing_document_line(item) for item in items]
+def consolidate_existing_documents(
+    items: list[str],
+    limit: int = 6,
+    *,
+    path_index: Optional[dict[str, str]] = None,
+) -> list[str]:
+    labeled = [
+        client_existing_document_line(item, path_index=path_index) for item in items
+    ]
     return consolidate_evidence([item for item in labeled if item], limit=limit)
 
 

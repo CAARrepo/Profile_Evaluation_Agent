@@ -10,14 +10,22 @@ from pathlib import Path
 from rich.console import Console
 
 from .agent import ReportAgent
-from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, REPORT_OUTPUT_DIR
+from .config import EVAL_OUTPUT_DIR, INTAKE_OUTPUT_DIR, OLLAMA_MODEL, REPORT_OUTPUT_DIR
 from .pdf_report import write_client_pdf
 
 console = Console()
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    agent = ReportAgent()
+    from .llm import reset_token_usage, token_usage
+
+    reset_token_usage()
+    agent = ReportAgent(use_llm=not args.no_llm, model=args.model)
+    if args.no_llm:
+        console.print("[yellow]Skipping report LLM; using intake-form slot labels only.[/yellow]")
+    else:
+        console.print(f"[yellow]Using Ollama model for Existing documents:[/yellow] {args.model}")
+
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -55,6 +63,13 @@ def cmd_run(args: argparse.Namespace) -> int:
     console.print(f"Category: [bold]{data.get('visa_category')}[/bold]")
     console.print(f"Rating: [bold]{data.get('overall_rating_label')}[/bold]")
     console.print(f"Attorney reviewed: {data.get('attorney_reviewed')}")
+    usage = token_usage()
+    if usage.get("call_count"):
+        console.print(
+            f"[cyan]Tokens[/cyan] {usage.get('total_tokens', 0)} total "
+            f"({usage.get('prompt_tokens', 0)} prompt + {usage.get('completion_tokens', 0)} completion, "
+            f"{usage.get('call_count', 0)} calls)"
+        )
     return 0
 
 
@@ -71,6 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--eval-dir", default=str(EVAL_OUTPUT_DIR))
     run_p.add_argument("--intake-dir", default=str(INTAKE_OUTPUT_DIR))
     run_p.add_argument("--output-dir", default=str(REPORT_OUTPUT_DIR))
+    run_p.add_argument("--model", default=OLLAMA_MODEL, help="Ollama model for Existing documents labels")
+    run_p.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Skip the report LLM and use intake-form slot labels only",
+    )
     run_p.set_defaults(func=cmd_run)
     return p
 
